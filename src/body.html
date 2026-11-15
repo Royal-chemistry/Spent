@@ -1,0 +1,55 @@
+
+<header class="topbar" id="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#home" aria-label="Spent, home">Spent</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#home" data-view="home">Home</a>
+      <a href="#activity" data-view="activity">Activity</a>
+      <a href="#recurring" data-view="recurring">Recurring</a>
+      <a href="#wallet" data-view="wallet">Wallet</a>
+      <a href="#insights" data-view="insights">Insights</a>
+    </nav>
+    <div class="top-actions">
+      <button type="button" class="icon-btn" data-act="appearance" aria-label="Themes and dark mode" data-icon="palette"></button>
+      <button type="button" class="icon-btn" data-act="settings" aria-label="Settings" data-icon="gear"></button>
+      <button type="button" class="btn-add" data-act="add-entry"><i data-icon="plus"></i><span>Add entry</span></button>
+    </div>
+  </div>
+  <div id="banner"></div>
+</header>
+
+<main id="main">
+  <section class="view" id="view-home" aria-label="Home"></section>
+  <section class="view" id="view-activity" aria-label="Activity" hidden></section>
+  <section class="view" id="view-recurring" aria-label="Recurring" hidden></section>
+  <section class="view" id="view-wallet" aria-label="Wallet" hidden></section>
+  <section class="view" id="view-insights" aria-label="Insights" hidden></section>
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>Spent is free for anyone to use. Your entries are private to you.</p>
+      <p id="foot-sync">Saved in this browser</p>
+    </div>
+  </footer>
+</main>
+
+<nav class="tabbar" aria-label="Main">
+  <a href="#home" data-view="home"><i data-icon="home"></i>Home</a>
+  <a href="#activity" data-view="activity"><i data-icon="list"></i>Activity</a>
+  <a href="#recurring" data-view="recurring"><i data-icon="repeat"></i>Recurring</a>
+  <a href="#wallet" data-view="wallet"><i data-icon="wallet"></i>Wallet</a>
+  <a href="#insights" data-view="insights"><i data-icon="chart"></i>Insights</a>
+</nav>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" hidden>
+  <form class="sheet-card" id="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheet-title" novalidate>
+    <div class="sheet-head">
+      <h2 id="sheet-title">Add entry</h2>
+      <button type="button" class="icon-btn sm" data-sheet-close aria-label="Close" data-icon="x"></button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+    <div class="sheet-foot" id="sheet-foot"></div>
+  </form>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="tip" id="tip" aria-hidden="true" hidden></div>
