@@ -330,45 +330,31 @@
     });
   }
 
-  /* ---------- appearance ---------- */
-  function appearanceSheet() {
-    const paint = () => {
-      const mode = effMode();
-      $("#sheet-body").innerHTML = `
-        <section class="set-group"><h3>Mode</h3><div class="seg" role="group" aria-label="Mode">${[["system", "Match device"], ["dark", "Dark"], ["light", "Light"]].map(([k, l]) => `<button type="button" data-act="sheet" data-k="mode:${k}" aria-pressed="${state.settings.mode === k}">${l}</button>`).join("")}</div></section>
-        <section class="set-group"><h3>Theme</h3><div class="skins">${SKINS.map((k) => {
-          const c = k[mode];
-          return `<button type="button" class="skin" data-act="sheet" data-k="skin:${k.id}" aria-pressed="${state.settings.skin === k.id}" style="--s-bg:${c[0]};--s-card:${c[2]};--s-fg:${c[4]};--s-fg2:${c[5]};--s-accent:${c[7]};--s-ink:${c[9]};--s-font:${esc(k.display)}">
-            <span class="skin-demo"><span class="skin-num">Aa</span><span class="skin-btn">Add</span></span>
-            <span class="skin-bars" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="skin-name">${esc(k.name)}</span><span class="skin-note">${esc(k.note)}</span></button>`;
-        }).join("")}</div></section>`;
-    };
-    openSheet({
-      title: "Appearance", body: "", foot: `<button type="submit" class="btn primary">Done</button>`,
-      onAct(k) {
-        const [what, v] = k.split(":");
-        if (what === "mode") state.settings.mode = v; else if (what === "skin") state.settings.skin = v; else return;
-        commit(); paint();
-        $(`#sheet-body [data-k="${k}"]`)?.focus();
-      },
-    });
-    paint();
+  /* ---------- appearance: lives inside Settings ---------- */
+  function appearanceHTML() {
+    const mode = effMode();
+    return `<h3>Appearance</h3>
+      <div class="seg" role="group" aria-label="Mode">${[["system", "Match device"], ["dark", "Dark"], ["light", "Light"]].map(([k, l]) => `<button type="button" data-act="sheet" data-k="mode:${k}" aria-pressed="${state.settings.mode === k}">${l}</button>`).join("")}</div>
+      <div class="skins" role="group" aria-label="Theme">${SKINS.map((k) => {
+        const c = k[mode];
+        return `<button type="button" class="skin" data-act="sheet" data-k="skin:${k.id}" aria-pressed="${state.settings.skin === k.id}" aria-label="${esc(`${k.name} theme. ${k.note}`)}" style="--s-bg:${c[0]};--s-card:${c[2]};--s-fg:${c[4]};--s-fg2:${c[5]};--s-accent:${c[7]};--s-ink:${c[9]};--s-font:${esc(k.display)}">
+          <span class="skin-demo"><span class="skin-num">Aa</span><span class="skin-btn">Add</span></span>
+          <span class="skin-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="skin-name">${esc(k.name)}</span><span class="skin-note">${esc(k.note)}</span></button>`;
+      }).join("")}</div>`;
   }
 
   /* ---------- settings ---------- */
   function settingsSheet() {
     const s = state.settings;
-    const skin = SKINS.find((k) => k.id === s.skin) || SKINS[0];
     const nb = state.categories.filter((c) => c.budget > 0).length;
     openSheet({
       title: "Settings",
       body: `
+        <section class="set-group" id="set-appearance">${appearanceHTML()}</section>
         <section class="set-group"><h3>Money</h3>
           <label class="field"><span class="lab">Currency</span>${select("set-currency", CURRENCIES.map((c) => [c, `${c} · ${currencyName(c)}`]), s.currency)}</label>
           <div class="set-line"><span>Budgets<small>${s.budget ? `${esc(W(s.budget))} a month` : "No monthly budget"}${nb ? ` · ${plural(nb, "category budget")}` : ""}</small></span><button type="button" class="btn small" data-act="budgets">Edit budgets</button></div></section>
-        <section class="set-group"><h3>Appearance</h3>
-          <div class="set-line"><span>${esc(skin.name)}<small>${{ system: "Matches your device", dark: "Dark", light: "Light" }[s.mode]}</small></span><button type="button" class="btn small" data-act="appearance">${svg("palette")}Change theme</button></div></section>
         <section class="set-group"><h3>Categories</h3>
           <p class="lab">Spending</p><div class="cat-list" id="set-cats-expense"></div>
           <p class="lab">Income</p><div class="cat-list" id="set-cats-income"></div>
@@ -385,6 +371,13 @@
           <div><button type="button" class="btn danger" data-act="erase">${svg("trash")}${state.sample ? "Clear sample data" : "Erase everything"}</button></div>
         </section>`,
       foot: `<button type="submit" class="btn primary">Done</button>`,
+      onAct(k) {
+        const [what, v] = k.split(":");
+        if (what === "mode") state.settings.mode = v; else if (what === "skin") state.settings.skin = v; else return;
+        commit();
+        $("#set-appearance").innerHTML = appearanceHTML();
+        $(`#set-appearance [data-k="${k}"]`)?.focus({ preventScroll: true });
+      },
       onMount(card) {
         renderSetCats();
         $("#set-currency", card).addEventListener("change", (e) => { state.settings.currency = e.target.value; commit(); });

@@ -68,7 +68,6 @@
         break;
       }
       case "settings": settingsSheet(); break;
-      case "appearance": appearanceSheet(); break;
       case "budgets": budgetSheet(); break;
       case "add-acct": accountForm(null, false); break;
       case "add-goal": accountForm(null, true); break;

@@ -97,6 +97,13 @@
 .skin-bars i:nth-child(3) { height: 70%; }
 .skin-name { font-weight: 700; font-size: 14px; }
 .skin-note { font-size: 12px; line-height: 1.35; color: var(--s-fg2); }
+@media (max-width: 520px) {
+  .skins { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .skin { padding: 10px; gap: 7px; border-radius: 13px; }
+  .skin-btn, .skin-note { display: none; }
+  .skin-num { font-size: 22px; }
+  .skin-name { font-size: 12.5px; overflow-wrap: anywhere; }
+}
 
 /* Settings rows and budgets */
 .set-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
