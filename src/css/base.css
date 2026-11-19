@@ -178,7 +178,7 @@ svg { flex: none; }
 .field { display: grid; gap: 7px; min-width: 0; }
 .lab { font-size: 13px; font-weight: 600; color: var(--fg-2); }
 .lab .opt-lab { font-weight: 500; color: var(--fg-3); }
-.input { height: 46px; width: 100%; min-width: 0; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--bg); padding: 0 14px; font-size: 15px; transition: border-color .15s, box-shadow .15s; }
+.input { height: 46px; width: 100%; min-width: 0; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--field, var(--bg)); padding: 0 14px; font-size: 15px; transition: border-color .15s, box-shadow .15s; }
 .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .hint { font-size: 12.5px; color: var(--fg-3); margin: 0; }
 .err { font-size: 12.5px; color: var(--accent); font-weight: 600; margin: 0; }
@@ -192,7 +192,7 @@ legend { padding: 0; margin-bottom: 8px; }
 .select-wrap.full { display: flex; }
 .select-wrap svg { position: absolute; right: 12px; width: 16px; height: 16px; color: var(--fg-3); pointer-events: none; }
 .select { appearance: none; -webkit-appearance: none; height: 42px; width: 100%; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-raise); padding: 0 36px 0 14px; font-size: 14px; font-weight: 500; cursor: pointer; }
-.sheet .select { height: 46px; border-color: var(--line-strong); background: var(--bg); font-size: 15px; }
+.sheet .select { height: 46px; border-color: var(--line-strong); background: var(--field, var(--bg)); font-size: 15px; }
 .search { position: relative; flex: 1 1 240px; min-width: 0; display: flex; }
 .search input { width: 100%; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-raise); padding: 0 14px 0 40px; font-size: 14px; }
 .search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
@@ -385,7 +385,7 @@ legend { padding: 0; margin-bottom: 8px; }
 .bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--accent); transition: filter .15s; }
 .col:hover .bar { filter: brightness(1.2); }
 .vchart.months .cols, .vchart.months .xl { gap: 14px; }
-.vchart.months .bar { background: var(--fg-3); }
+.vchart.months .bar { background: var(--series-2, var(--fg-3)); }
 .vchart.months .col.emph .bar { background: var(--accent); }
 .vlab { position: absolute; left: 50%; transform: translate(-50%, -6px); bottom: var(--h); font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--fg); font-variant-numeric: tabular-nums; }
 .refline { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px dashed var(--fg-2); z-index: 1; pointer-events: none; }
@@ -469,7 +469,7 @@ legend { padding: 0; margin-bottom: 8px; }
 .confirm { display: grid; gap: 12px; padding: 14px 16px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
 .confirm p { margin: 0; }
 .confirm .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-.copybox { width: 100%; min-height: 140px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--bg); padding: 12px; font-family: var(--font-mono); font-size: 12px; resize: vertical; }
+.copybox { width: 100%; min-height: 140px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--field, var(--bg)); padding: 12px; font-family: var(--font-mono); font-size: 12px; resize: vertical; }
 
 .menu { position: fixed; z-index: 70; min-width: 210px; display: grid; padding: 6px; border-radius: 14px; border: 1px solid var(--line-strong); background: var(--bg-raise); box-shadow: var(--shadow); animation: pop .18s ease-out; }
 .menu button { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--fg); font-size: 14px; text-align: left; cursor: pointer; }

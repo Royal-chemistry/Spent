@@ -336,8 +336,8 @@
     return `<h3>Appearance</h3>
       <div class="seg" role="group" aria-label="Mode">${[["system", "Match device"], ["dark", "Dark"], ["light", "Light"]].map(([k, l]) => `<button type="button" data-act="sheet" data-k="mode:${k}" aria-pressed="${state.settings.mode === k}">${l}</button>`).join("")}</div>
       <div class="skins" role="group" aria-label="Theme">${SKINS.map((k) => {
-        const c = k[mode];
-        return `<button type="button" class="skin" data-act="sheet" data-k="skin:${k.id}" aria-pressed="${state.settings.skin === k.id}" aria-label="${esc(`${k.name} theme. ${k.note}`)}" style="--s-bg:${c[0]};--s-card:${c[2]};--s-fg:${c[4]};--s-fg2:${c[5]};--s-accent:${c[7]};--s-ink:${c[9]};--s-font:${esc(k.display)}">
+        const c = k[mode], glow = k.glow?.[mode];
+        return `<button type="button" class="skin${k.glass ? " glass" : ""}" data-act="sheet" data-k="skin:${k.id}" aria-pressed="${state.settings.skin === k.id}" aria-label="${esc(`${k.name} theme. ${k.note}`)}" style="${glow ? `--s-glow:${glow[0]};--s-glow-2:${glow[1]};` : ""}--s-bg:${c[0]};--s-card:${c[2]};--s-fg:${c[4]};--s-fg2:${c[5]};--s-accent:${c[7]};--s-ink:${c[9]};--s-font:${esc(k.display)}">
           <span class="skin-demo"><span class="skin-num">Aa</span><span class="skin-btn">Add</span></span>
           <span class="skin-bars" aria-hidden="true"><i></i><i></i><i></i></span>
           <span class="skin-name">${esc(k.name)}</span><span class="skin-note">${esc(k.note)}</span></button>`;

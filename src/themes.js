@@ -37,6 +37,35 @@
     { id: "graphite", name: "Graphite", note: "No colour, just contrast", display: ARCHIVO, text: INSTRUMENT,
       dark: ["#0C0C0C", "#161616", "#202020", "#2B2B2B", "#F2F2F2", "#ABABAB", "#878787", "#F2F2F2", "#FFFFFF", "#0C0C0C"],
       light: ["#FAFAFA", "#FFFFFF", "#EDEDED", "#E2E2E2", "#111111", "#555555", "#6B6B6B", "#111111", "#333333", "#FFFFFF"] },
+    /* Glass: a fixed, grainy blue haze behind see-through surfaces. The colour arrays here are for previews and for
+       the few places that need a solid colour; `extra` replaces the surface tokens with translucent ones. */
+    { id: "mist", name: "Mist", note: "Grainy blue haze, frosted glass", display: INSTRUMENT, text: INSTRUMENT, ls: .5, hero: 600, head: 600, brand: 700, numw: .6, r: [12, 18, 24], glass: true,
+      glow: { dark: ["rgba(104, 142, 186, .8)", "rgba(112, 106, 162, .6)"], light: ["rgba(255, 255, 255, .95)", "rgba(186, 180, 224, .75)"] },
+      dark: ["#090D14", "#1B2535", "#2A3850", "#33425A", "#F4F7FB", "#DAE2EB", "#C2CCD8", "#E4ECF7", "#FFFFFF", "#0B1220"],
+      light: ["#E8EDF3", "#F4F7FA", "#D5DEE8", "#C9D4E0", "#0D1622", "#2C3746", "#3F4A56", "#1B2E47", "#26405F", "#FFFFFF"],
+      extra: {
+        dark: {
+          "--bg-raise": "rgba(9, 14, 22, .38)", "--bg-card": "rgba(9, 14, 22, .52)", "--bg-hover": "rgba(255, 255, 255, .1)",
+          "--line": "rgba(255, 255, 255, .13)", "--line-strong": "rgba(255, 255, 255, .26)", "--glass": "rgba(8, 12, 19, .5)", "--scrim": "rgba(2, 4, 8, .5)",
+          "--field": "rgba(4, 8, 14, .4)", "--sheet-bg": "rgba(13, 19, 30, .68)", "--opt-bg": "#121A27", "--series-2": "#6F98CF",
+          "--glass-edge": "rgba(255, 255, 255, .17)", "--glass-hi": "rgba(255, 255, 255, .12)", "--hero-shade": "rgba(4, 7, 12, .32)",
+          "--tint": "42%", "--tint-top": "26%", "--tint-ico": "62%", "--poster-floor": "rgba(255, 255, 255, .02)",
+          "--mist-a": "#0A0F17", "--mist-b": "#1A2638", "--mist-c": "#152031", "--mist-d": "#07090E",
+          "--mist-shaft": "rgba(104, 142, 186, .4)", "--mist-shaft-2": "rgba(122, 158, 200, .24)", "--mist-lav": "rgba(112, 106, 162, .34)",
+          "--mist-low": "rgba(84, 104, 150, .26)", "--mist-ray": "rgba(158, 190, 228, .11)", "--mist-vig": "rgba(3, 5, 9, .8)", "--grain": ".32", "--grain-blend": "overlay",
+        },
+        light: {
+          "--bg-raise": "rgba(255, 255, 255, .42)", "--bg-card": "rgba(255, 255, 255, .58)", "--bg-hover": "rgba(255, 255, 255, .72)",
+          "--line": "rgba(16, 28, 46, .12)", "--line-strong": "rgba(16, 28, 46, .24)", "--glass": "rgba(236, 241, 247, .6)",
+          "--field": "rgba(255, 255, 255, .58)", "--sheet-bg": "rgba(240, 244, 249, .76)", "--opt-bg": "#FFFFFF", "--series-2": "#5E7798",
+          "--good": "#066B40", "--good-soft": "rgba(6, 107, 64, .12)",
+          "--glass-edge": "rgba(255, 255, 255, .6)", "--glass-hi": "rgba(255, 255, 255, .7)", "--hero-shade": "rgba(255, 255, 255, .3)",
+          "--tint": "86%", "--tint-top": "76%", "--tint-ico": "86%", "--poster-floor": "rgba(12, 18, 28, .34)",
+          "--mist-a": "#EEF2F7", "--mist-b": "#D3DDE9", "--mist-c": "#DAE1EB", "--mist-d": "#EDF0F5",
+          "--mist-shaft": "rgba(255, 255, 255, .72)", "--mist-shaft-2": "rgba(255, 255, 255, .5)", "--mist-lav": "rgba(186, 180, 224, .42)",
+          "--mist-low": "rgba(170, 190, 222, .35)", "--mist-ray": "rgba(255, 255, 255, .4)", "--mist-vig": "rgba(118, 136, 164, .3)", "--grain": ".42", "--grain-blend": "soft-light",
+        },
+      } },
   ];
 
   const alpha = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`; };
@@ -54,11 +83,12 @@
       "--glass": alpha(bg, dark ? .74 : .8), "--scrim": dark ? "rgba(0, 0, 0, .6)" : "rgba(10, 10, 20, .4)",
       "--shadow": dark ? "0 28px 60px -22px rgba(0, 0, 0, .85)" : "0 28px 60px -26px rgba(20, 20, 45, .35)",
       "--play-bg": fg, "--play-fg": bg, "--ghost-bg": dark ? "rgba(128, 128, 142, .32)" : alpha(fg, .08), "--ghost-fg": dark ? "#FFFFFF" : fg,
+      "--field": bg, "--sheet-bg": raise, "--opt-bg": raise, "--series-2": fg3,
     };
   }
   function skinCSS(k) {
     const sel = `:root[data-skin="${k.id}"]`;
-    const colours = (mode) => Object.entries(tokens(k[mode], mode)).map(([p, v]) => `${p}:${v}`).join(";") + `;color-scheme:${mode}`;
+    const colours = (mode) => Object.entries({ ...tokens(k[mode], mode), ...(k.extra?.[mode] || {}) }).map(([p, v]) => `${p}:${v}`).join(";") + `;color-scheme:${mode}`;
     const r = k.r || [8, 14, 22];
     const shape = `--font-display:${k.display};--font-text:${k.text};--ls:${k.ls ?? 1};--w-hero:${k.hero || 800};--w-head:${k.head || 700};--w-brand:${k.brand || 900};--num-w:${k.numw || .64};--r-s:${r[0]}px;--r-m:${r[1]}px;--r-l:${r[2]}px`;
     return `${sel}{${shape};${colours("dark")}}\n@media (prefers-color-scheme: light){${sel}:not([data-theme="dark"]){${colours("light")}}}\n${sel}[data-theme="light"]{${colours("light")}}\n${sel}[data-theme="dark"]{${colours("dark")}}`;
@@ -73,7 +103,9 @@
   const hostTheme = root.getAttribute("data-theme");
   let settings = {};
   try { settings = (JSON.parse(localStorage.getItem("spent.v2") || "null") || {}).settings || {}; } catch { settings = {}; }
-  root.setAttribute("data-skin", SKINS.some((k) => k.id === settings.skin) ? settings.skin : "cinema");
+  const skin = SKINS.find((k) => k.id === settings.skin) || SKINS[0];
+  root.setAttribute("data-skin", skin.id);
+  if (skin.glass) root.setAttribute("data-glass", "");
   if (settings.mode === "dark" || settings.mode === "light") root.setAttribute("data-theme", settings.mode);
   window.__spent = { SKINS, tokens, hostTheme };
 })();

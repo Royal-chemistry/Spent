@@ -13,7 +13,7 @@ Open `index.html` to use it. On first load it shows sample data so you can look 
 - **Wallet** shows accounts with running balances, savings goals with targets and dates, who owes whom with a Settle up button, and your net worth.
 - **Insights** charts daily spending, spending by category, budgets, and money in against money out over six months.
 - **Budgets** for the whole month and for single categories.
-- **Nine themes** (Cinema, Cupertino, Aurora, Ultraviolet, Ember, Ledger, Terminal, Sakura, Graphite), each in dark and light, or matching your device.
+- **Ten themes** (Cinema, Cupertino, Aurora, Ultraviolet, Ember, Ledger, Terminal, Sakura, Graphite and Mist), each in dark and light, or matching your device. Mist puts frosted, see-through surfaces over a grainy blue haze.
 - **39 currencies**, your own categories, CSV export, and JSON backup and restore.
 
 Keyboard: `N` adds an entry, `/` jumps to search.
@@ -41,7 +41,7 @@ The page is built from the parts in `src/`:
 
 | Path | What's in it |
 | --- | --- |
-| `src/themes.js` | The nine themes: ten colours per mode plus type and shape settings |
+| `src/themes.js` | The ten themes: ten colours per mode plus type and shape settings, and translucent surfaces for glass themes |
 | `src/css/` | Styles |
 | `src/body.html`, `src/head.html` | Page markup |
 | `src/js/` | The app, joined in file-name order: helpers, data model, sample data, storage, screens, forms, events |

@@ -37,6 +37,7 @@
   function applyTheme() {
     const { skin, mode } = state.settings;
     rootEl.setAttribute("data-skin", skin);
+    rootEl.toggleAttribute("data-glass", !!SKINS.find((k) => k.id === skin)?.glass);
     if (mode === "dark" || mode === "light") rootEl.setAttribute("data-theme", mode);
     else if (hostTheme) rootEl.setAttribute("data-theme", hostTheme);
     else rootEl.removeAttribute("data-theme");
