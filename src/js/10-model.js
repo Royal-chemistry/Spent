@@ -68,6 +68,16 @@
     invest: { label: "Investments", icon: "trend", color: "#B45309" },
     goal: { label: "Goal", icon: "target", color: "#BE123C" },
   };
+  /* How money was paid or received. This is separate from the account: a UPI payment and a debit card both draw on a bank account. */
+  const METHODS = { upi: "UPI", debit: "Debit card", credit: "Credit card", cash: "Cash", bank: "Bank transfer", wallet: "Wallet", other: "Other" };
+  const LEGACY_METHOD = { card: "credit" }; // the first version had a single "Card"
+  function methodFor(acctType, currency) {
+    if (acctType === "cash") return "cash";
+    if (acctType === "card") return "credit";
+    if (acctType === "wallet") return "wallet";
+    if (acctType === "bank") return currency === "INR" ? "upi" : "debit";
+    return "bank";
+  }
   const GOAL_COLORS = ["#BE123C", "#0F766E", "#6D28D9", "#B45309", "#1E40AF", "#A21CAF"];
   const DEFAULT_CATS = [
     ["food", "Food & dining", "#C2410C", "food", "expense"], ["groceries", "Groceries", "#15803D", "groceries", "expense"], ["transport", "Transport", "#1D4ED8", "transport", "expense"],
@@ -86,7 +96,7 @@
   function emptyState(currency, skin = "cinema", mode = "system") {
     return {
       v: 2, sample: false,
-      settings: { currency, budget: 0, skin, mode },
+      settings: { currency, budget: 0, skin, mode, carry: false, alerts: true, remind: false },
       accounts: [newAccount("cash", "Cash", "cash"), newAccount("bank", "Bank account", "bank"), newAccount("card", "Credit card", "card")],
       categories: DEFAULT_CATS.map(([id, name, color, icon, kind]) => ({ id, name, color, icon, kind, budget: 0 })),
       entries: [], recurring: [],
@@ -102,6 +112,9 @@
     const out = emptyState(CURRENCIES.includes(set.currency) ? set.currency : guessCurrency(), SKINS.some((k) => k.id === set.skin) ? set.skin : "cinema", mode === "dark" || mode === "light" ? mode : "system");
     out.sample = !!s.sample;
     out.settings.budget = Math.max(0, round2(set.budget));
+    out.settings.carry = !!set.carry;
+    out.settings.alerts = set.alerts !== false;
+    out.settings.remind = !!set.remind;
     const hex = (c) => /^#[0-9a-f]{6}$/i.test(c);
 
     if (Array.isArray(s.categories) && s.categories.length) {
@@ -126,6 +139,8 @@
     const catIds = { expense: new Set(), income: new Set() };
     for (const c of out.categories) catIds[c.kind].add(c.id);
     const catOf = (kind, id) => (kind === "income" ? (catIds.income.has(id) ? id : "other-in") : kind === "expense" ? (catIds.expense.has(id) ? id : "other") : "");
+    const acctType = (id) => out.accounts.find((a) => a.id === id)?.type || "bank";
+    const methodOf = (m, account) => (METHODS[m] ? m : LEGACY_METHOD[m] || methodFor(acctType(account), out.settings.currency));
     const ids = new Set();
     const okId = (id) => { const v = typeof id === "string" && id ? id.slice(0, 40) : uid(); if (ids.has(v)) return uid(); ids.add(v); return v; };
 
@@ -140,6 +155,9 @@
         id: okId(e.id), type, title: String(e.title || "").slice(0, 80), amount: round2(e.amount), category: catOf(TYPES[type].cat, e.category), date: e.date, account, to,
         person: TYPES[type].person ? String(e.person || "").trim().slice(0, 40) || "Someone" : "", note: String(e.note || "").slice(0, 140),
         recurringId: typeof e.recurringId === "string" ? e.recurringId : null,
+        method: type === "transfer" ? "" : methodOf(e.method, account),
+        due: (type === "lent" || type === "borrowed") && isDate(e.due) ? e.due : "",
+        ...foreign(e, out.settings.currency),
       });
     }
     if (Array.isArray(s.recurring)) {
@@ -158,10 +176,24 @@
         out.recurring.push({
           id: okId(r.id), kind, name: String(r.name).slice(0, 60), category: catOf(kind, r.category), amount: round2(r.amount), frequency: FREQ[r.frequency] ? r.frequency : "monthly",
           start, day, end: isDate(r.end) ? r.end : "", variable: !!r.variable, auto: !!r.auto, account, to, note: String(r.note || "").slice(0, 140), active: r.active !== false, paid,
+          method: kind === "transfer" ? "" : methodOf(r.method, account),
         });
       }
     }
     return out;
+  }
+
+  /* An entry made in another currency keeps the original amount and the rate used. `amount` is always in the tracker's currency. */
+  function foreign(e, base) {
+    const cur = typeof e.cur === "string" && CURRENCIES.includes(e.cur) && e.cur !== base && Number(e.orig) > 0 && Number(e.rate) > 0 ? e.cur : "";
+    return { cur, orig: cur ? round2(e.orig) : 0, rate: cur ? Number(Number(e.rate).toPrecision(8)) : 0 };
+  }
+  const fmtCur = (n, cur) => { try { return nf(cur, Math.abs(n - Math.round(n)) < 0.005 ? 0 : 2).format(n); } catch { return `${cur} ${n}`; } };
+  /* Whether the method says more than the account already does. */
+  function methodShown(e) {
+    if (!e.method) return false;
+    const t = acctById(e.account)?.type;
+    return !((e.method === "cash" && t === "cash") || (e.method === "credit" && t === "card") || (e.method === "wallet" && t === "wallet"));
   }
 
   /* ---------- lookups ---------- */
@@ -193,13 +225,14 @@
       if (!TYPES[e.type].person) continue;
       const key = personKey(e.person);
       if (!key) continue;
-      const p = map.get(key) || { key, name: e.person, balance: 0, count: 0, last: "" };
+      const p = map.get(key) || { key, name: e.person, balance: 0, count: 0, last: "", due: "", dueSet: "" };
       p.balance += e.type === "lent" || e.type === "repaid" ? e.amount : -e.amount;
       p.count++;
+      if (e.due && e.date >= p.dueSet) { p.due = e.due; p.dueSet = e.date; }
       if (e.date >= p.last) { p.last = e.date; p.name = e.person; }
       map.set(key, p);
     }
-    return [...map.values()].map((p) => ({ ...p, balance: round2(p.balance) })).sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance) || a.name.localeCompare(b.name));
+    return [...map.values()].map((p) => { const balance = round2(p.balance); return { ...p, balance, due: balance ? p.due : "" }; }).sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance) || a.name.localeCompare(b.name));
   }
   function worth(bal = balances(), ppl = people()) {
     let assets = 0, debts = 0, goals = 0;
@@ -262,12 +295,13 @@
     if (T.cat && (e.title || e.type === "refund")) bits.push(catById(e.category, T.cat).name);
     if (T.person) bits.push(e.title ? `${T.label}, ${e.person}` : T.label);
     if (e.type === "transfer") bits.push(e.title ? `${acctName(e.account)} to ${acctName(e.to)}` : "Transfer");
-    else bits.push(acctName(e.account));
+    else { if (methodShown(e)) bits.push(METHODS[e.method]); bits.push(acctName(e.account)); }
+    if (e.cur) bits.push(`${fmtCur(e.orig, e.cur)} at ${e.rate}`);
     if (e.recurringId && state.recurring.some((r) => r.id === e.recurringId)) bits.push("Recurring");
     if (e.note) bits.push(e.note);
     return bits.map(esc).join(" · ");
   }
-  const searchText = (e) => `${entryTitle(e)} ${e.note} ${e.person} ${e.category ? catById(e.category).name : ""} ${TYPES[e.type].label} ${acctName(e.account)} ${e.to ? acctName(e.to) : ""}`.toLowerCase();
+  const searchText = (e) => `${entryTitle(e)} ${METHODS[e.method] || ""} ${e.note} ${e.person} ${e.category ? catById(e.category).name : ""} ${TYPES[e.type].label} ${acctName(e.account)} ${e.to ? acctName(e.to) : ""}`.toLowerCase();
 
   /* ---------- recurring: when each one falls due and whether it has been dealt with ---------- */
   /* The nth time a recurring item comes round. Weekly ones are keyed by date, monthly ones by month. */
@@ -336,7 +370,7 @@
     return { fixedMonth: round2(fixedMonth), fixedSoFar: round2(fixedSoFar), unpaid: round2(unpaid) };
   }
   function entryFromRecurring(r, id, date, amount, account = r.account) {
-    return { id, type: r.kind, title: r.name, amount, category: r.kind === "transfer" ? "" : r.category, date, account, to: r.kind === "transfer" ? r.to : "", person: "", note: "", recurringId: r.id };
+    return { id, type: r.kind, title: r.name, amount, category: r.kind === "transfer" ? "" : r.category, date, account, to: r.kind === "transfer" ? r.to : "", person: "", note: "", recurringId: r.id, method: r.kind === "transfer" ? "" : r.method || (state ? methodFor(acctById(account)?.type, state.settings.currency) : ""), due: "", cur: "", orig: 0, rate: 0 };
   }
   /* Adds entries for recurring items set to record themselves once their date arrives. Returns how many were added. */
   function autoPost() {

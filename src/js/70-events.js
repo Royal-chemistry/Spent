@@ -23,8 +23,8 @@
   setTopH();
 
   function setMonth(m) { ui.month = m; render(); }
-  function showActivity({ account = "", person = "", cat = "all", month = "" } = {}) {
-    Object.assign(ui, { actAccount: account, actPerson: person, actCat: cat, actType: "all", actQuery: "", actScope: account || person ? "all" : "month" });
+  function showActivity({ account = "", person = "", cat = "all", month = "", method = "", period = "month" } = {}) {
+    Object.assign(ui, { actAccount: account, actPerson: person, actCat: cat, actMethod: method, actType: "all", actQuery: "", actView: "list", actPeriod: account || person ? "all" : period });
     if (month) ui.month = month;
     if (location.hash === "#activity") route(); else location.hash = "activity";
   }
@@ -32,12 +32,13 @@
   function addPreset() {
     const p = {}, cur = monthOf(todayISO());
     if (ui.view === "activity") {
-      if (ui.actScope === "month" && ui.month !== cur) p.date = `${ui.month}-01`;
+      if (ui.actPeriod !== "all" && !inPeriod(ui.actPeriod, ui.anchor)) p.date = periodRange(ui.actPeriod, ui.anchor).from;
+      if (ui.actMethod) p.method = ui.actMethod;
       if (ui.actType === "people") p.type = "lent"; else if (ui.actType !== "all") p.type = ui.actType;
       if (ui.actCat !== "all") p.category = ui.actCat;
       if (ui.actAccount) p.account = ui.actAccount;
       if (ui.actPerson) { p.type = "lent"; p.person = people().find((x) => x.key === ui.actPerson)?.name || ""; }
-    } else if (ui.view === "insights" && ui.month !== cur) p.date = `${ui.month}-01`;
+    } else if (ui.view === "insights" && !inPeriod(ui.insPeriod, ui.anchor)) p.date = periodRange(ui.insPeriod, ui.anchor).from;
     return p;
   }
 
@@ -89,13 +90,19 @@
       case "month-now": setMonth(monthOf(todayISO())); break;
       case "act-type": ui.actType = k; if (k !== "all" && k !== "expense") ui.actCat = "all"; renderActivity(); break;
       case "act-cat": ui.actCat = ui.actCat === el.dataset.cat ? "all" : el.dataset.cat; if (ui.actCat !== "all" && ui.actType !== "expense") ui.actType = "all"; renderActivity(); break;
-      case "act-scope": ui.actScope = k === "all" ? "all" : "month"; renderActivity(); break;
+      case "act-period": ui.actPeriod = PERIODS[k] ? k : "month"; renderActivity(); break;
+      case "act-view": ui.actView = k === "calendar" ? "calendar" : "list"; if (ui.actView === "calendar") ui.actPeriod = "month"; renderActivity(); break;
+      case "cal-day": ui.anchor = el.dataset.d; ui.actPeriod = "day"; ui.actView = "list"; renderActivity(); break;
+      case "ins-period": ui.insPeriod = ["week", "month", "year"].includes(k) ? k : "month"; renderInsights(); break;
+      case "period-prev": case "period-next": ui.anchor = stepAnchor(el.dataset.p, ui.anchor, el.dataset.act === "period-next" ? 1 : -1); render(); break;
+      case "period-now": ui.anchor = todayISO(); render(); break;
+      case "go-method": showActivity({ method: k, period: ui.view === "insights" ? ui.insPeriod : "month" }); break;
       case "act-clear-acct": ui.actAccount = ""; renderActivity(); break;
       case "act-clear-person": ui.actPerson = ""; renderActivity(); break;
-      case "clear-filters": Object.assign(ui, { actType: "all", actCat: "all", actQuery: "", actAccount: "", actPerson: "" }); renderActivity(); break;
+      case "clear-filters": Object.assign(ui, { actType: "all", actCat: "all", actQuery: "", actAccount: "", actPerson: "", actMethod: "" }); renderActivity(); break;
       case "rec-filter": ui.recFilter = el.dataset.f; renderRecurring(); break;
       case "clear-rec-filters": ui.recFilter = "all"; ui.recQuery = ""; renderRecurring(); break;
-      case "go-cat": showActivity({ cat: el.dataset.cat, month: ui.view === "home" ? monthOf(todayISO()) : ui.month }); break;
+      case "go-cat": showActivity({ cat: el.dataset.cat, month: ui.view === "home" ? monthOf(todayISO()) : "", period: ui.view === "insights" ? ui.insPeriod : "month" }); break;
       case "row-prev": case "row-next": {
         const tr = el.parentElement.querySelector(".row-track");
         tr.scrollBy({ left: (el.dataset.act === "row-next" ? 1 : -1) * tr.clientWidth * 0.82, behavior: reduced ? "auto" : "smooth" });
@@ -121,6 +128,7 @@
   });
   document.addEventListener("change", (e) => {
     if (e.target.id === "act-sort") { ui.actSort = e.target.value; renderActList(); }
+    else if (e.target.id === "act-method") { ui.actMethod = e.target.value; renderActivity(); }
     else if (e.target.id === "rec-sort") { ui.recSort = e.target.value; renderRecList(); }
   });
   document.addEventListener("keydown", (e) => {

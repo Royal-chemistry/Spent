@@ -11,73 +11,94 @@
       <div class="vchart flow" role="img" aria-label="${esc(`Money in and money spent for the six months to ${fMonth(months[5])}: ${months.map((mm, i) => `${fMon(mm)} in ${W(inc[i])}, spent ${W(out[i])}`).join("; ")}.`)}"><div class="plot">${grid}<div class="cols">${cols}</div></div><div class="xl" aria-hidden="true">${months.map((mm) => `<span>${esc(fMon(mm))}</span>`).join("")}</div></div>
       <details class="tbl wide"><summary>Show monthly amounts</summary><div class="tbl-scroll"><table><thead><tr><th>Month</th><th>Came in</th><th>Spent</th><th>Kept</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
   }
-  function budgetRows(cats, spent) {
-    const budget = state.settings.budget;
-    const spentBy = new Map(cats.map((c) => [c.id, c.total]));
-    const line = (name, color, sp, bud) => {
-      const left = round2(bud - sp), pct = Math.max(0, Math.min(100, (sp / bud) * 100));
-      const tone = left < 0 ? "bad" : pct >= 85 ? "warn" : "";
-      return `<div class="brow"><div class="brow-top"><span class="brow-name">${color ? `<i style="background:${color}"></i>` : ""}${esc(name)}</span><span class="brow-val"><b>${esc(W(sp))}</b> of ${esc(W(bud))}</span></div><span class="meter ${tone}" role="img" aria-label="${Math.round((sp / bud) * 100)}% used"><i style="width:${pct}%"></i></span><span class="brow-note ${tone}">${left < 0 ? `Over by ${esc(W(-left))}` : `${esc(W(left))} left`}</span></div>`;
-    };
-    const lines = [];
-    if (budget > 0) lines.push(line("Whole month", "", Math.max(0, spent), budget));
-    for (const c of state.categories) if (c.kind === "expense" && c.budget > 0) lines.push(line(c.name, c.color, spentBy.get(c.id) || 0, c.budget));
-    return lines.length ? `<div class="brows">${lines.join("")}</div>` : `<p class="hint">No budgets yet. Set a limit for the month or for single categories and you'll see how you're doing here.</p>`;
+  /* Budgets for a month, each with markers at 50% and 80%. */
+  function budgetRows(m) {
+    const rows = budgetStatus(m);
+    if (!rows.length) return `<p class="hint">No budgets yet. Set a limit for the month or for single categories and you'll see how you're doing here.</p>`;
+    const prevName = fMonthName(addMonths(m, -1));
+    return `<div class="brows">${rows.map((b) => {
+      const left = round2(b.total - b.spent), pct = Math.max(0, Math.min(100, b.pct));
+      const tone = b.level >= 100 ? "bad" : b.level >= 80 ? "warn" : "";
+      return `<div class="brow"><div class="brow-top"><span class="brow-name">${b.color ? `<i style="background:${b.color}"></i>` : ""}${esc(b.name === "Monthly budget" ? "Whole month" : b.name)}</span><span class="brow-val"><b>${esc(W(b.spent))}</b> of ${esc(W(b.total))}</span></div>
+        <span class="meter marks ${tone}" role="img" aria-label="${Math.round(b.pct)}% used"><i style="width:${pct}%"></i></span>
+        <span class="brow-note ${tone}">${left < 0 ? `Over by ${esc(W(-left))}` : `${esc(W(left))} left`}${b.carry ? ` · includes ${esc(W(b.carry))} carried over from ${esc(prevName)}` : ""}</span></div>`;
+    }).join("")}</div>`;
+  }
+  function hbarList(items, total, nameOf, colorOf, act) {
+    const max = items[0]?.total || 1;
+    return `<div class="hbars">${items.map((x) => {
+      const pct = total > 0 ? (x.total / total) * 100 : 0;
+      return `<button type="button" class="hbar" ${act(x)} data-tip="${esc(`${nameOf(x)} · ${plural(x.count, "expense")}`)}"><span class="hbar-name"><i style="background:${colorOf(x)}"></i>${esc(nameOf(x))}</span><span class="hbar-track"><span class="hbar-fill" style="width:${(x.total / max) * 100}%"></span></span><span class="hbar-val">${esc(W(x.total))}<small>${pct > 0 && pct < 1 ? "<1" : Math.round(pct)}%</small></span></button>`;
+    }).join("")}</div>`;
   }
 
-  /* ---------- insights ---------- */
+  /* ---------- insights: a report for a week, a month or a year ---------- */
   function renderInsights() {
-    const m = ui.month, t = todayISO(), cur = monthOf(t), isCur = m === cur;
-    const days = daysInMonth(m);
-    const elapsed = isCur ? Number(t.slice(8)) : m < cur ? days : 0;
-    const list = entriesIn(m);
+    const p = ui.insPeriod, t = todayISO(), r = periodRange(p, ui.anchor), isCur = inPeriod(p, ui.anchor);
+    const m = monthOf(ui.anchor);
+    const list = entriesBetween(r.from, r.to);
     const { spent, income, net } = totals(list);
-    const daily = Array.from({ length: days }, () => 0);
-    for (const e of list) daily[Number(e.date.slice(8)) - 1] += spendOf(e);
-    for (let i = 0; i < days; i++) daily[i] = Math.max(0, round2(daily[i]));
-    const pm = addMonths(m, -1);
-    const prev = totals(entriesIn(pm).filter((e) => !isCur || Number(e.date.slice(8)) <= elapsed)).spent;
+    const span = daysBetween(r.from, r.to) + 1;
+    const elapsed = isCur ? daysBetween(r.from, t) + 1 : r.to < t ? span : 0;
+    const pr = periodRange(p, stepAnchor(p, ui.anchor, -1));
+    const prev = totals(entriesBetween(pr.from, isCur ? addDays(pr.from, elapsed - 1) : pr.to)).spent;
     const change = prev > 0 ? (spent - prev) / prev : null;
-    const cats = catTotals(list);
-    const months = Array.from({ length: 6 }, (_, i) => addMonths(m, i - 5));
-    const mt = months.map((mm) => totals(entriesIn(mm)));
-    const budget = state.settings.budget;
-    const changeText = change === null ? "Nothing to compare" : `${change > 0 ? "▲" : change < 0 ? "▼" : ""} ${Math.abs(Math.round(change * 100))}%`;
-    const peak = daily.reduce((bi, v, i) => (v > daily[bi] ? i : bi), 0);
+    const prevName = p === "week" ? (isCur ? "last week" : "the week before") : p === "year" ? pr.from.slice(0, 4) : fMonthName(monthOf(pr.from));
+    const cats = catTotals(list), methods = methodTotals(list);
+    const B = budgetFor(m);
     const nIncome = list.filter((e) => e.type === "income").length;
+    const changeText = change === null ? "Nothing to compare" : `${change > 0 ? "▲" : change < 0 ? "▼" : ""} ${Math.abs(Math.round(change * 100))}%`;
+
+    // The spending chart: days for a week or a month, months for a year
+    let chart;
+    if (p === "year") {
+      const months = Array.from({ length: 12 }, (_, i) => `${r.from.slice(0, 4)}-${pad(i + 1)}`);
+      const vals = months.map((mm) => Math.max(0, totals(entriesIn(mm)).spent));
+      const peak = vals.reduce((bi, v, i) => (v > vals[bi] ? i : bi), 0);
+      chart = { title: "Month by month", sub: `What you spent each month in ${r.from.slice(0, 4)}.${state.settings.budget > 0 ? " The dashed line is your monthly budget." : ""}`, html: vchart({
+        values: vals, labels: months.map(fMon), tips: months.map((mm, i) => `${fMonth(mm)} · ${money(vals[i])}`), showLabel: () => true,
+        ref: state.settings.budget || 0, refLabel: "", aria: `Spending each month in ${r.from.slice(0, 4)}. The highest was ${fMonth(months[peak])} at ${money(vals[peak])}.`,
+      }), rows: months.map((mm, i) => [fMonth(mm), vals[i]]) };
+    } else {
+      const dates = Array.from({ length: span }, (_, i) => addDays(r.from, i));
+      const byDay = new Map(dates.map((d) => [d, 0]));
+      for (const e of list) byDay.set(e.date, (byDay.get(e.date) || 0) + spendOf(e));
+      const vals = dates.map((d) => Math.max(0, round2(byDay.get(d))));
+      const peak = vals.reduce((bi, v, i) => (v > vals[bi] ? i : bi), 0);
+      const daily = B.total > 0 ? B.total / daysInMonth(m) : 0;
+      chart = { title: "Day by day", sub: `What you spent each day${p === "week" ? " this week" : ` in ${fMonthName(m)}`}.${daily ? " The dashed line is your budget split evenly across the month." : ""}`, html: vchart({
+        values: vals, labels: dates.map((d) => (p === "week" ? DF.wd.format(parseISO(d)) : String(Number(d.slice(8))))),
+        tips: dates.map((d, i) => `${fDay(d)} · ${money(vals[i])}`), showLabel: (i) => p === "week" || i === 0 || (i + 1) % 5 === 0,
+        ref: daily, refLabel: daily ? `Even share ${W(daily)} a day` : "", aria: `Daily spending for ${periodLabel(p, ui.anchor)}. The highest day was ${fDate(dates[peak])} at ${money(vals[peak])}.`,
+      }), rows: dates.filter((d, i) => vals[i] > 0).map((d) => [fDay(d), Math.max(0, round2(byDay.get(d)))]) };
+    }
+    const flowMonths = p === "year" ? Array.from({ length: 12 }, (_, i) => `${r.from.slice(0, 4)}-${pad(i + 1)}`) : Array.from({ length: 6 }, (_, i) => addMonths(m, i - 5));
+    const flowTotals = flowMonths.map((mm) => totals(entriesIn(mm)));
 
     let body;
     if (!list.length) {
-      body = `<div class="empty"><h3>Nothing to chart for ${esc(fMonthName(m))}</h3><p>Once you add entries for this month, you'll see daily spending, categories, budgets and how it compares with earlier months.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
+      body = `<div class="empty"><h3>Nothing to chart for ${esc(periodLabel(p, ui.anchor))}</h3><p>Once you add entries for this ${PERIOD_WORD[p]}, you'll see your spending by day and category, budgets, payment methods and how it compares with before.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
     } else {
-      const dailyChart = vchart({
-        values: daily, labels: daily.map((_, i) => String(i + 1)),
-        tips: daily.map((v, i) => `${fDay(`${m}-${pad(i + 1)}`)} · ${money(v)}`),
-        showLabel: (i) => i === 0 || (i + 1) % 5 === 0,
-        ref: budget > 0 ? budget / days : 0, refLabel: budget > 0 ? `Even share ${W(budget / days)} a day` : "",
-        aria: `Daily spending in ${fMonth(m)}. The highest day was ${fDate(`${m}-${pad(peak + 1)}`)} at ${money(daily[peak])}.`,
-      });
-      const maxCat = cats[0]?.total || 1;
-      const catBars = cats.length ? `<div class="hbars">${cats.map((ct) => {
-        const c = catById(ct.id), pct = spent > 0 ? (ct.total / spent) * 100 : 0;
-        return `<button type="button" class="hbar" data-act="go-cat" data-cat="${esc(c.id)}" data-tip="${esc(`${c.name} · ${plural(ct.count, "expense")}`)}"><span class="hbar-name"><i style="background:${c.color}"></i>${esc(c.name)}</span><span class="hbar-track"><span class="hbar-fill" style="width:${(ct.total / maxCat) * 100}%"></span></span><span class="hbar-val">${esc(W(ct.total))}<small>${pct > 0 && pct < 1 ? "<1" : Math.round(pct)}%</small></span></button>`;
-      }).join("")}</div>` : `<p class="hint">No spending logged this month.</p>`;
-      const dayRows = daily.map((v, i) => [i, v]).filter(([, v]) => v > 0).map(([i, v]) => `<tr><td>${esc(fDay(`${m}-${pad(i + 1)}`))}</td><td>${esc(money(v))}</td></tr>`).join("");
+      const catBars = cats.length ? hbarList(cats, spent, (x) => catById(x.id).name, (x) => catById(x.id).color, (x) => `data-act="go-cat" data-cat="${esc(x.id)}"`) : `<p class="hint">No spending logged.</p>`;
+      const methodBars = methods.length ? hbarList(methods, spent, (x) => METHODS[x.id] || "Other", (x) => METHOD_COLORS[x.id] || "#52525B", (x) => `data-act="go-method" data-k="${esc(x.id)}"`) : `<p class="hint">No spending logged.</p>`;
       body = `<div class="insights">
-        <section class="card span2"><div class="card-head"><h3>Day by day</h3><p>What you spent each day in ${esc(fMonthName(m))}.${budget > 0 ? " The dashed line is your budget split evenly across the month." : ""}</p></div>${dailyChart}
-          <details class="tbl"><summary>Show daily amounts</summary><div class="tbl-scroll"><table><thead><tr><th>Day</th><th>Spent</th></tr></thead><tbody>${dayRows}</tbody></table></div></details></section>
+        <section class="card span2"><div class="card-head"><h3>${chart.title}</h3><p>${esc(chart.sub)}</p></div>${chart.html}
+          <details class="tbl"><summary>Show the amounts</summary><div class="tbl-scroll"><table><thead><tr><th>${p === "year" ? "Month" : "Day"}</th><th>Spent</th></tr></thead><tbody>${chart.rows.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${esc(money(v))}</td></tr>`).join("")}</tbody></table></div></details></section>
         <section class="card"><div class="card-head"><h3>By category</h3><p>Tap a category to see its entries.</p></div>${catBars}</section>
-        <section class="card"><div class="card-head split"><div><h3>Budgets</h3><p>How ${esc(fMonthName(m))} compares with the limits you set.</p></div><button type="button" class="btn small" data-act="budgets">Edit budgets</button></div>${budgetRows(cats, spent)}</section>
-        <section class="card span2"><div class="card-head"><h3>In and out</h3><p>What came in and what you spent over six months, ending with ${esc(fMonthName(m))}.</p></div>${flowChart(months, mt)}</section>
+        <section class="card"><div class="card-head split"><div><h3>Budgets</h3><p>${p === "month" ? `How ${esc(fMonthName(m))} compares with the limits you set.` : `Budgets are monthly. This is ${esc(fMonthName(m))}.`}</p></div><button type="button" class="btn small" data-act="budgets">Edit budgets</button></div>${budgetRows(m)}</section>
+        <section class="card"><div class="card-head"><h3>By payment method</h3><p>How you paid: UPI, cards, cash and the rest.</p></div>${methodBars}</section>
+        <section class="card"><div class="card-head"><h3>In and out</h3><p>What came in and what you spent ${p === "year" ? `each month of ${esc(r.from.slice(0, 4))}` : `over six months, ending with ${esc(fMonthName(m))}`}.</p></div>${flowChart(flowMonths, flowTotals)}</section>
       </div>`;
     }
+    const seg = (k, l) => `<button type="button" data-act="ins-period" data-k="${k}" aria-pressed="${p === k}">${l}</button>`;
     $("#view-insights").innerHTML = `<div class="wrap view-body">
-      <header class="view-head"><div><p class="eyebrow">Insights</p><h1 class="large-title">${esc(fMonth(m))}</h1></div>${monthNav()}</header>
+      <header class="view-head"><div><p class="eyebrow">Insights</p><h1 class="large-title">${esc(periodLabel(p, ui.anchor))}</h1></div>
+        <div class="head-tools"><div class="seg" role="group" aria-label="Report period">${seg("week", "Week")}${seg("month", "Month")}${seg("year", "Year")}</div>${periodNav(p)}</div></header>
       <div class="kpis">
-        ${kpi("Spent", W(Math.max(0, spent)), elapsed ? `${W(Math.max(0, spent) / elapsed)} a day on average` : "This month hasn't started")}
+        ${kpi("Spent", W(Math.max(0, spent)), elapsed ? `${W(Math.max(0, spent) / elapsed)} a day on average` : `This ${PERIOD_WORD[p]} hasn't started`)}
         ${kpi("Came in", W(income), nIncome ? plural(nIncome, "income entry", "income entries") : "No income logged")}
-        ${income > 0 ? kpi(net >= 0 ? "Kept" : "Short by", W(Math.abs(net)), net >= 0 ? `${Math.round((net / income) * 100)}% of what came in` : "You spent more than came in", net >= 0 ? "good" : "bad") : kpi("Kept", "None yet", "Add income to see what you keep")}
-        ${kpi(`Spending against ${fMonthName(pm)}`, changeText, change === null ? `${fMonthName(pm)} had nothing logged` : isCur ? `${W(prev)} by day ${elapsed} last month` : `${W(prev)} in ${fMonthName(pm)}`, change === null ? "" : change > 0.05 ? "warn" : change < -0.05 ? "good" : "")}
+        ${income > 0 ? kpi(net >= 0 ? "Kept" : "Short by", W(Math.abs(net)), net >= 0 ? `A savings rate of ${Math.round((net / income) * 100)}%` : "You spent more than came in", net >= 0 ? "good" : "bad") : kpi("Kept", "None yet", "Add income to see your savings rate")}
+        ${kpi(`Spending against ${prevName}`, changeText, change === null ? `Nothing logged for ${prevName}` : isCur ? `${W(prev)} at the same point` : `${W(prev)} in ${prevName}`, change === null ? "" : change > 0.05 ? "warn" : change < -0.05 ? "good" : "")}
       </div>${body}</div>`;
   }
 

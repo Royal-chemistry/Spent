@@ -1,0 +1,59 @@
+
+/* ================= today at a glance, alerts, calendar, subscriptions ================= */
+.home-kpis { padding-block: 4px 8px; display: grid; gap: 12px; }
+.home-kpis .kpis { margin-bottom: 0; }
+.alerts { display: flex; flex-wrap: wrap; gap: 8px; }
+.alert-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 14px 6px 10px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg-raise); color: var(--fg); font-size: 13px; cursor: pointer; text-align: left; }
+.alert-chip svg { width: 17px; height: 17px; color: var(--fg-2); }
+.alert-chip b { font-weight: 600; }
+.alert-chip.lvl-80 { border-color: var(--warn); background: var(--warn-soft); }
+.alert-chip.lvl-80 svg { color: var(--warn); }
+.alert-chip.lvl-100 { border-color: var(--bad); background: var(--bad-soft); }
+.alert-chip.lvl-100 svg { color: var(--bad); }
+.home-chart { padding: 18px 20px 14px; }
+.head-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg button svg { width: 15px; height: 15px; vertical-align: -3px; margin-right: 5px; }
+.item-amt small { display: block; font-size: 11.5px; font-weight: 500; color: var(--fg-3); text-align: right; }
+.meter.marks { position: relative; }
+.meter.marks::before, .meter.marks::after { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bg-raise); }
+.meter.marks::before { left: 50%; }
+.meter.marks::after { left: 80%; }
+.bopts { display: grid; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.check small { display: block; font-size: 12.5px; color: var(--fg-3); margin-top: 2px; }
+
+/* Calendar */
+.cal-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; font-size: 13.5px; color: var(--fg-2); }
+.cal-stats b { color: var(--fg); font-weight: 600; }
+.cal-stats .hint { flex-basis: 100%; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-h { padding: 2px 4px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-3); }
+.cal-day { position: relative; min-height: 84px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 8px 9px; border-radius: var(--r-s); border: 1px solid var(--line); color: var(--fg); text-align: left; cursor: pointer; background: var(--bg-raise); background: linear-gradient(color-mix(in oklab, var(--accent) var(--heat), transparent), color-mix(in oklab, var(--accent) var(--heat), transparent)), var(--bg-raise); transition: border-color .15s; min-width: 0; overflow: hidden; }
+.cal-day:hover { border-color: var(--line-strong); }
+.cal-day.today { box-shadow: inset 0 0 0 2px var(--fg); }
+.cal-day.future { background: transparent; border-style: dashed; color: var(--fg-3); }
+.cal-n { font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.cal-amt { font-family: var(--font-display); font-weight: var(--w-head); font-size: 15px; letter-spacing: calc(-.01em * var(--ls)); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.cal-in { font-size: 11.5px; font-weight: 600; color: var(--good); font-variant-numeric: tabular-nums; }
+.cal-free { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--good); }
+.cal-free svg { width: 13px; height: 13px; flex: none; }
+.cal-pad { min-height: 84px; }
+@media (max-width: 640px) {
+  .cal { gap: 4px; }
+  .cal-day, .cal-pad { min-height: 58px; padding: 6px; }
+  .cal-amt { font-size: 12px; }
+  .cal-free span, .cal-in { display: none; }
+  .cal-h { font-size: 10px; letter-spacing: .04em; padding-inline: 2px; }
+}
+
+/* Subscriptions */
+.subs { margin-bottom: 16px; }
+.subs .card-head p b { color: var(--fg); font-weight: 600; }
+.subs-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.sub-chip { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; min-width: 190px; flex: 1 1 190px; max-width: 320px; padding: 10px 14px; border-radius: var(--r-m); border: 1px solid var(--line); background: var(--bg-card); color: var(--fg); text-align: left; cursor: pointer; }
+.sub-chip:hover { border-color: var(--line-strong); }
+.sub-name { font-weight: 600; overflow-wrap: anywhere; }
+.sub-amt { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sub-amt small { font-weight: 500; color: var(--fg-3); margin-left: 1px; }
+.sub-next { grid-column: 1 / -1; font-size: 12.5px; color: var(--fg-2); }
+.prow .pill { flex: none; }
+.insights > .card { align-self: start; }

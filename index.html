@@ -730,6 +730,65 @@ legend { padding: 0; margin-bottom: 8px; }
 .skin.glass > * { position: relative; }
 .skin.glass .skin-bars i { background: rgba(255, 255, 255, .16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
 .skin.glass .skin-bars i:nth-child(2) { background: var(--s-accent); }
+
+/* ================= today at a glance, alerts, calendar, subscriptions ================= */
+.home-kpis { padding-block: 4px 8px; display: grid; gap: 12px; }
+.home-kpis .kpis { margin-bottom: 0; }
+.alerts { display: flex; flex-wrap: wrap; gap: 8px; }
+.alert-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 14px 6px 10px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg-raise); color: var(--fg); font-size: 13px; cursor: pointer; text-align: left; }
+.alert-chip svg { width: 17px; height: 17px; color: var(--fg-2); }
+.alert-chip b { font-weight: 600; }
+.alert-chip.lvl-80 { border-color: var(--warn); background: var(--warn-soft); }
+.alert-chip.lvl-80 svg { color: var(--warn); }
+.alert-chip.lvl-100 { border-color: var(--bad); background: var(--bad-soft); }
+.alert-chip.lvl-100 svg { color: var(--bad); }
+.home-chart { padding: 18px 20px 14px; }
+.head-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg button svg { width: 15px; height: 15px; vertical-align: -3px; margin-right: 5px; }
+.item-amt small { display: block; font-size: 11.5px; font-weight: 500; color: var(--fg-3); text-align: right; }
+.meter.marks { position: relative; }
+.meter.marks::before, .meter.marks::after { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bg-raise); }
+.meter.marks::before { left: 50%; }
+.meter.marks::after { left: 80%; }
+.bopts { display: grid; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.check small { display: block; font-size: 12.5px; color: var(--fg-3); margin-top: 2px; }
+
+/* Calendar */
+.cal-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; font-size: 13.5px; color: var(--fg-2); }
+.cal-stats b { color: var(--fg); font-weight: 600; }
+.cal-stats .hint { flex-basis: 100%; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-h { padding: 2px 4px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-3); }
+.cal-day { position: relative; min-height: 84px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 8px 9px; border-radius: var(--r-s); border: 1px solid var(--line); color: var(--fg); text-align: left; cursor: pointer; background: var(--bg-raise); background: linear-gradient(color-mix(in oklab, var(--accent) var(--heat), transparent), color-mix(in oklab, var(--accent) var(--heat), transparent)), var(--bg-raise); transition: border-color .15s; min-width: 0; overflow: hidden; }
+.cal-day:hover { border-color: var(--line-strong); }
+.cal-day.today { box-shadow: inset 0 0 0 2px var(--fg); }
+.cal-day.future { background: transparent; border-style: dashed; color: var(--fg-3); }
+.cal-n { font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.cal-amt { font-family: var(--font-display); font-weight: var(--w-head); font-size: 15px; letter-spacing: calc(-.01em * var(--ls)); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.cal-in { font-size: 11.5px; font-weight: 600; color: var(--good); font-variant-numeric: tabular-nums; }
+.cal-free { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--good); }
+.cal-free svg { width: 13px; height: 13px; flex: none; }
+.cal-pad { min-height: 84px; }
+@media (max-width: 640px) {
+  .cal { gap: 4px; }
+  .cal-day, .cal-pad { min-height: 58px; padding: 6px; }
+  .cal-amt { font-size: 12px; }
+  .cal-free span, .cal-in { display: none; }
+  .cal-h { font-size: 10px; letter-spacing: .04em; padding-inline: 2px; }
+}
+
+/* Subscriptions */
+.subs { margin-bottom: 16px; }
+.subs .card-head p b { color: var(--fg); font-weight: 600; }
+.subs-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.sub-chip { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; min-width: 190px; flex: 1 1 190px; max-width: 320px; padding: 10px 14px; border-radius: var(--r-m); border: 1px solid var(--line); background: var(--bg-card); color: var(--fg); text-align: left; cursor: pointer; }
+.sub-chip:hover { border-color: var(--line-strong); }
+.sub-name { font-weight: 600; overflow-wrap: anywhere; }
+.sub-amt { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sub-amt small { font-weight: 500; color: var(--fg-3); margin-left: 1px; }
+.sub-next { grid-column: 1 / -1; font-size: 12.5px; color: var(--fg-2); }
+.prow .pill { flex: none; }
+.insights > .card { align-self: start; }
 </style>
 <script>
 /* Themes. Each one is ten colours per mode plus a few type and shape settings; every other token is derived from those.
@@ -1114,6 +1173,16 @@ legend { padding: 0; margin-bottom: 8px; }
     invest: { label: "Investments", icon: "trend", color: "#B45309" },
     goal: { label: "Goal", icon: "target", color: "#BE123C" },
   };
+  /* How money was paid or received. This is separate from the account: a UPI payment and a debit card both draw on a bank account. */
+  const METHODS = { upi: "UPI", debit: "Debit card", credit: "Credit card", cash: "Cash", bank: "Bank transfer", wallet: "Wallet", other: "Other" };
+  const LEGACY_METHOD = { card: "credit" }; // the first version had a single "Card"
+  function methodFor(acctType, currency) {
+    if (acctType === "cash") return "cash";
+    if (acctType === "card") return "credit";
+    if (acctType === "wallet") return "wallet";
+    if (acctType === "bank") return currency === "INR" ? "upi" : "debit";
+    return "bank";
+  }
   const GOAL_COLORS = ["#BE123C", "#0F766E", "#6D28D9", "#B45309", "#1E40AF", "#A21CAF"];
   const DEFAULT_CATS = [
     ["food", "Food & dining", "#C2410C", "food", "expense"], ["groceries", "Groceries", "#15803D", "groceries", "expense"], ["transport", "Transport", "#1D4ED8", "transport", "expense"],
@@ -1132,7 +1201,7 @@ legend { padding: 0; margin-bottom: 8px; }
   function emptyState(currency, skin = "cinema", mode = "system") {
     return {
       v: 2, sample: false,
-      settings: { currency, budget: 0, skin, mode },
+      settings: { currency, budget: 0, skin, mode, carry: false, alerts: true, remind: false },
       accounts: [newAccount("cash", "Cash", "cash"), newAccount("bank", "Bank account", "bank"), newAccount("card", "Credit card", "card")],
       categories: DEFAULT_CATS.map(([id, name, color, icon, kind]) => ({ id, name, color, icon, kind, budget: 0 })),
       entries: [], recurring: [],
@@ -1148,6 +1217,9 @@ legend { padding: 0; margin-bottom: 8px; }
     const out = emptyState(CURRENCIES.includes(set.currency) ? set.currency : guessCurrency(), SKINS.some((k) => k.id === set.skin) ? set.skin : "cinema", mode === "dark" || mode === "light" ? mode : "system");
     out.sample = !!s.sample;
     out.settings.budget = Math.max(0, round2(set.budget));
+    out.settings.carry = !!set.carry;
+    out.settings.alerts = set.alerts !== false;
+    out.settings.remind = !!set.remind;
     const hex = (c) => /^#[0-9a-f]{6}$/i.test(c);
 
     if (Array.isArray(s.categories) && s.categories.length) {
@@ -1172,6 +1244,8 @@ legend { padding: 0; margin-bottom: 8px; }
     const catIds = { expense: new Set(), income: new Set() };
     for (const c of out.categories) catIds[c.kind].add(c.id);
     const catOf = (kind, id) => (kind === "income" ? (catIds.income.has(id) ? id : "other-in") : kind === "expense" ? (catIds.expense.has(id) ? id : "other") : "");
+    const acctType = (id) => out.accounts.find((a) => a.id === id)?.type || "bank";
+    const methodOf = (m, account) => (METHODS[m] ? m : LEGACY_METHOD[m] || methodFor(acctType(account), out.settings.currency));
     const ids = new Set();
     const okId = (id) => { const v = typeof id === "string" && id ? id.slice(0, 40) : uid(); if (ids.has(v)) return uid(); ids.add(v); return v; };
 
@@ -1186,6 +1260,9 @@ legend { padding: 0; margin-bottom: 8px; }
         id: okId(e.id), type, title: String(e.title || "").slice(0, 80), amount: round2(e.amount), category: catOf(TYPES[type].cat, e.category), date: e.date, account, to,
         person: TYPES[type].person ? String(e.person || "").trim().slice(0, 40) || "Someone" : "", note: String(e.note || "").slice(0, 140),
         recurringId: typeof e.recurringId === "string" ? e.recurringId : null,
+        method: type === "transfer" ? "" : methodOf(e.method, account),
+        due: (type === "lent" || type === "borrowed") && isDate(e.due) ? e.due : "",
+        ...foreign(e, out.settings.currency),
       });
     }
     if (Array.isArray(s.recurring)) {
@@ -1204,10 +1281,24 @@ legend { padding: 0; margin-bottom: 8px; }
         out.recurring.push({
           id: okId(r.id), kind, name: String(r.name).slice(0, 60), category: catOf(kind, r.category), amount: round2(r.amount), frequency: FREQ[r.frequency] ? r.frequency : "monthly",
           start, day, end: isDate(r.end) ? r.end : "", variable: !!r.variable, auto: !!r.auto, account, to, note: String(r.note || "").slice(0, 140), active: r.active !== false, paid,
+          method: kind === "transfer" ? "" : methodOf(r.method, account),
         });
       }
     }
     return out;
+  }
+
+  /* An entry made in another currency keeps the original amount and the rate used. `amount` is always in the tracker's currency. */
+  function foreign(e, base) {
+    const cur = typeof e.cur === "string" && CURRENCIES.includes(e.cur) && e.cur !== base && Number(e.orig) > 0 && Number(e.rate) > 0 ? e.cur : "";
+    return { cur, orig: cur ? round2(e.orig) : 0, rate: cur ? Number(Number(e.rate).toPrecision(8)) : 0 };
+  }
+  const fmtCur = (n, cur) => { try { return nf(cur, Math.abs(n - Math.round(n)) < 0.005 ? 0 : 2).format(n); } catch { return `${cur} ${n}`; } };
+  /* Whether the method says more than the account already does. */
+  function methodShown(e) {
+    if (!e.method) return false;
+    const t = acctById(e.account)?.type;
+    return !((e.method === "cash" && t === "cash") || (e.method === "credit" && t === "card") || (e.method === "wallet" && t === "wallet"));
   }
 
   /* ---------- lookups ---------- */
@@ -1239,13 +1330,14 @@ legend { padding: 0; margin-bottom: 8px; }
       if (!TYPES[e.type].person) continue;
       const key = personKey(e.person);
       if (!key) continue;
-      const p = map.get(key) || { key, name: e.person, balance: 0, count: 0, last: "" };
+      const p = map.get(key) || { key, name: e.person, balance: 0, count: 0, last: "", due: "", dueSet: "" };
       p.balance += e.type === "lent" || e.type === "repaid" ? e.amount : -e.amount;
       p.count++;
+      if (e.due && e.date >= p.dueSet) { p.due = e.due; p.dueSet = e.date; }
       if (e.date >= p.last) { p.last = e.date; p.name = e.person; }
       map.set(key, p);
     }
-    return [...map.values()].map((p) => ({ ...p, balance: round2(p.balance) })).sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance) || a.name.localeCompare(b.name));
+    return [...map.values()].map((p) => { const balance = round2(p.balance); return { ...p, balance, due: balance ? p.due : "" }; }).sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance) || a.name.localeCompare(b.name));
   }
   function worth(bal = balances(), ppl = people()) {
     let assets = 0, debts = 0, goals = 0;
@@ -1308,12 +1400,13 @@ legend { padding: 0; margin-bottom: 8px; }
     if (T.cat && (e.title || e.type === "refund")) bits.push(catById(e.category, T.cat).name);
     if (T.person) bits.push(e.title ? `${T.label}, ${e.person}` : T.label);
     if (e.type === "transfer") bits.push(e.title ? `${acctName(e.account)} to ${acctName(e.to)}` : "Transfer");
-    else bits.push(acctName(e.account));
+    else { if (methodShown(e)) bits.push(METHODS[e.method]); bits.push(acctName(e.account)); }
+    if (e.cur) bits.push(`${fmtCur(e.orig, e.cur)} at ${e.rate}`);
     if (e.recurringId && state.recurring.some((r) => r.id === e.recurringId)) bits.push("Recurring");
     if (e.note) bits.push(e.note);
     return bits.map(esc).join(" · ");
   }
-  const searchText = (e) => `${entryTitle(e)} ${e.note} ${e.person} ${e.category ? catById(e.category).name : ""} ${TYPES[e.type].label} ${acctName(e.account)} ${e.to ? acctName(e.to) : ""}`.toLowerCase();
+  const searchText = (e) => `${entryTitle(e)} ${METHODS[e.method] || ""} ${e.note} ${e.person} ${e.category ? catById(e.category).name : ""} ${TYPES[e.type].label} ${acctName(e.account)} ${e.to ? acctName(e.to) : ""}`.toLowerCase();
 
   /* ---------- recurring: when each one falls due and whether it has been dealt with ---------- */
   /* The nth time a recurring item comes round. Weekly ones are keyed by date, monthly ones by month. */
@@ -1382,7 +1475,7 @@ legend { padding: 0; margin-bottom: 8px; }
     return { fixedMonth: round2(fixedMonth), fixedSoFar: round2(fixedSoFar), unpaid: round2(unpaid) };
   }
   function entryFromRecurring(r, id, date, amount, account = r.account) {
-    return { id, type: r.kind, title: r.name, amount, category: r.kind === "transfer" ? "" : r.category, date, account, to: r.kind === "transfer" ? r.to : "", person: "", note: "", recurringId: r.id };
+    return { id, type: r.kind, title: r.name, amount, category: r.kind === "transfer" ? "" : r.category, date, account, to: r.kind === "transfer" ? r.to : "", person: "", note: "", recurringId: r.id, method: r.kind === "transfer" ? "" : r.method || (state ? methodFor(acctById(account)?.type, state.settings.currency) : ""), due: "", cur: "", orig: 0, rate: 0 };
   }
   /* Adds entries for recurring items set to record themselves once their date arrives. Returns how many were added. */
   function autoPost() {
@@ -1402,6 +1495,149 @@ legend { padding: 0; margin-bottom: 8px; }
     }
     return added;
   }
+  /* ================= periods, budgets, no-spend days, debts, subscriptions ================= */
+  Object.assign(ICONS, {
+    alert: '<path d="M12 8v5M12 16.5v.01"/><circle cx="12" cy="12" r="8.5"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  });
+  DF.dayLong = df({ weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  DF.wd = df({ weekday: "short" });
+  const PERIODS = { day: "Day", week: "Week", month: "Month", year: "Year", all: "All time" };
+
+  /* Weeks run Monday to Sunday. */
+  const weekStart = (d) => addDays(d, -((parseISO(d).getDay() + 6) % 7));
+  function periodRange(p, anchor) {
+    if (p === "day") return { from: anchor, to: anchor };
+    if (p === "week") { const from = weekStart(anchor); return { from, to: addDays(from, 6) }; }
+    if (p === "year") { const y = anchor.slice(0, 4); return { from: `${y}-01-01`, to: `${y}-12-31` }; }
+    if (p === "all") return { from: "0000-01-01", to: "9999-12-31" };
+    const m = monthOf(anchor);
+    return { from: `${m}-01`, to: `${m}-${pad(daysInMonth(m))}` };
+  }
+  function periodLabel(p, anchor) {
+    const { from, to } = periodRange(p, anchor);
+    if (p === "day") return DF.dayLong.format(parseISO(anchor));
+    if (p === "week") return `${fDate(from)} – ${fDateLong(to)}`;
+    if (p === "year") return anchor.slice(0, 4);
+    if (p === "all") return "All time";
+    return fMonth(monthOf(anchor));
+  }
+  function stepAnchor(p, anchor, dir) {
+    if (p === "day") return addDays(anchor, dir);
+    if (p === "week") return addDays(anchor, 7 * dir);
+    const m = addMonths(monthOf(anchor), p === "year" ? 12 * dir : dir);
+    return dayInMonth(m, Number(anchor.slice(8)));
+  }
+  const inPeriod = (p, anchor, d = todayISO()) => { const r = periodRange(p, anchor); return d >= r.from && d <= r.to; };
+  const entriesBetween = (from, to) => state.entries.filter((e) => e.date >= from && e.date <= to);
+  const PERIOD_WORD = { day: "day", week: "week", month: "month", year: "year" };
+
+  /* ---------- budgets ---------- */
+  /* With carry-forward on, what was left of last month's budget is added to this month. It only ever looks back one
+     month, so unused money doesn't pile up forever. */
+  function withCarry(base, m, prevSpent) {
+    if (!(base > 0)) return { base: 0, carry: 0, total: 0 };
+    const prev = addMonths(m, -1);
+    const carry = state.settings.carry && entriesIn(prev).length ? Math.max(0, round2(base - prevSpent(prev))) : 0;
+    return { base, carry, total: round2(base + carry) };
+  }
+  const budgetFor = (m) => withCarry(state.settings.budget || 0, m, (prev) => totals(entriesIn(prev)).spent);
+  const catBudgetFor = (c, m) => withCarry(c.budget || 0, m, (prev) => catTotals(entriesIn(prev)).find((x) => x.id === c.id)?.total || 0);
+  const LEVELS = [100, 80, 50];
+  const levelOf = (spent, total) => (total > 0 ? LEVELS.find((l) => (spent / total) * 100 >= l) || 0 : 0);
+  /* Every budget for a month: the whole month first, then categories. */
+  function budgetStatus(m) {
+    const list = entriesIn(m);
+    const spent = Math.max(0, totals(list).spent);
+    const byCat = new Map(catTotals(list).map((c) => [c.id, c.total]));
+    const out = [];
+    const b = budgetFor(m);
+    if (b.total > 0) out.push({ id: "", name: "Monthly budget", color: "", spent, ...b, pct: (spent / b.total) * 100, level: levelOf(spent, b.total) });
+    for (const c of state.categories) {
+      if (c.kind !== "expense" || !(c.budget > 0)) continue;
+      const cb = catBudgetFor(c, m), sp = byCat.get(c.id) || 0;
+      out.push({ id: c.id, name: c.name, color: c.color, spent: sp, ...cb, pct: (sp / cb.total) * 100, level: levelOf(sp, cb.total) });
+    }
+    return out;
+  }
+  /* Budgets that moved up a level (50, 80 or 100%) between two snapshots, for the alert after saving an entry. */
+  function crossedLevels(before, after) {
+    const was = new Map(before.map((b) => [b.id, b.level]));
+    return after.filter((b) => b.level > (was.get(b.id) || 0));
+  }
+  const levelText = (b) => (b.level >= 100 ? `${b.name} is over budget` : `${b.name} is ${Math.floor(b.pct)}% used`);
+
+  /* ---------- no-spend days ---------- */
+  /* A no-spend day has no spending apart from recurring bills. Days before your first entry don't count. */
+  function firstEntryDate() { let f = ""; for (const e of state.entries) if (!f || e.date < f) f = e.date; return f; }
+  function discretionaryDays() {
+    const set = new Set();
+    for (const e of state.entries) if (e.type === "expense" && !e.recurringId) set.add(e.date);
+    return set;
+  }
+  function noSpendStats(from, to) {
+    const t = todayISO(), first = firstEntryDate(), spent = discretionaryDays();
+    let count = 0, run = 0, longest = 0, counted = 0;
+    if (first) {
+      for (let d = from < first ? first : from; d <= to && d <= t; d = addDays(d, 1)) {
+        counted++;
+        if (spent.has(d)) { run = 0; continue; }
+        count++; run++; longest = Math.max(longest, run);
+      }
+    }
+    return { count, longest, counted };
+  }
+  /* No-spend days in a row up to and including today. */
+  function noSpendStreak() {
+    const first = firstEntryDate(), spent = discretionaryDays();
+    if (!first) return 0;
+    let n = 0;
+    for (let d = todayISO(), guard = 0; d >= first && guard < 800; d = addDays(d, -1), guard++) { if (spent.has(d)) break; n++; }
+    return n;
+  }
+
+  /* ---------- debts ---------- */
+  function debtStatus(p) {
+    if (!p.due || !p.balance) return null;
+    const days = daysBetween(todayISO(), p.due);
+    return { days, overdue: days < 0, soon: days >= 0 && days <= SOON_DAYS };
+  }
+  function debtText(st) {
+    if (!st) return "";
+    if (st.overdue) return `Overdue ${plural(-st.days, "day")}`;
+    if (st.days === 0) return "Due today";
+    if (st.days === 1) return "Due tomorrow";
+    return st.soon ? `Due in ${st.days} days` : "";
+  }
+
+  /* ---------- subscriptions, payment methods, balances ---------- */
+  const isSubscription = (r) => r.kind === "expense" && r.category === "subscriptions";
+  function subscriptions() {
+    const t = todayISO();
+    const list = state.recurring.filter((r) => isSubscription(r) && r.active !== false).map((r) => ({ r, st: cycleStatus(r, t), monthly: round2(r.amount * FREQ[r.frequency].perMonth) })).filter((x) => x.st);
+    const monthly = round2(list.reduce((n, x) => n + x.monthly, 0));
+    return { list: list.sort((a, b) => b.monthly - a.monthly), monthly, yearly: round2(monthly * 12) };
+  }
+  /* Spending by how it was paid, with refunds taken off. */
+  function methodTotals(list) {
+    const map = new Map();
+    for (const e of list) { const v = spendOf(e); if (!v) continue; const k = e.method || "other"; const x = map.get(k) || { id: k, total: 0, count: 0 }; x.total += v; if (e.type === "expense") x.count++; map.set(k, x); }
+    return [...map.values()].map((x) => ({ ...x, total: round2(x.total) })).filter((x) => x.total > 0).sort((a, b) => b.total - a.total);
+  }
+  /* Money you can spend now (cash, bank and wallets), what you owe on cards, and what's put aside. */
+  function liquidity(bal = balances()) {
+    let available = 0, cardOwed = 0, saved = 0;
+    for (const a of state.accounts) {
+      const b = bal.get(a.id) || 0;
+      if (a.type === "cash" || a.type === "bank" || a.type === "wallet") available += b;
+      else if (a.type === "card") { if (b < 0) cardOwed -= b; }
+      else saved += b;
+    }
+    return { available: round2(available), cardOwed: round2(cardOwed), saved: round2(saved) };
+  }
+  const METHOD_COLORS = { upi: "#0E7490", debit: "#1D4ED8", credit: "#3F3F46", cash: "#15803D", bank: "#4338CA", wallet: "#7C3AED", other: "#52525B" };
+
   /* ================= sample data ================= */
   function mulberry32(a) { return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   /* Six months of a believable household, scaled to the visitor's currency, so the first screen shows what the app does. */
@@ -1499,6 +1735,8 @@ legend { padding: 0; margin-bottom: 8px; }
     push(addDays(t, -6), "borrowed", "", "", 25, "cash", { person: "Priya", note: "Lunch, I forgot my card" });
     push(addDays(t, -40), "lent", "", "", 60, "bank", { person: "Alex" });
     push(addDays(t, -31), "collected", "", "", 60, "bank", { person: "Alex" });
+    // In India most everyday spending goes out by UPI from a bank account rather than on a card.
+    if (currency === "INR") for (const e of s.entries) if (e.account === "card" && e.type === "expense" && !e.recurringId && rng() < 0.6) { e.account = "bank"; e.method = "upi"; }
     // Pay off each month's card spending on the 5th of the next month.
     for (let i = 4; i >= 0; i--) {
       const m = addMonths(cur, -i), date = `${m}-05`;
@@ -1508,7 +1746,9 @@ legend { padding: 0; margin-bottom: 8px; }
       if (due > 0) s.entries.push({ id: uid(), type: "transfer", title: "Card payment", amount: due, category: "", date, account: "bank", to: "card", person: "", note: "", recurringId: null });
     }
     s.recurring = R;
-    return s;
+    for (const e of s.entries) if (e.type === "lent" && e.person === "Sam") e.due = addDays(t, 4);
+    for (const e of s.entries) if (e.type === "borrowed" && e.person === "Priya") e.due = addDays(t, 9);
+    return normalize(s);
   }
   /* ================= storage ================= */
   const LS_KEY = "spent.v2", LS_OLD = "spent.v1";
@@ -1671,11 +1911,13 @@ legend { padding: 0; margin-bottom: 8px; }
   unsynced = !!(saved && saved._unsynced);
 
   const ui = {
-    view: "home", month: monthOf(todayISO()),
-    actQuery: "", actType: "all", actCat: "all", actAccount: "", actPerson: "", actScope: "month", actSort: "new",
+    view: "home", anchor: todayISO(), insPeriod: "month",
+    actQuery: "", actType: "all", actCat: "all", actAccount: "", actPerson: "", actPeriod: "month", actView: "list", actMethod: "", actSort: "new",
     recQuery: "", recFilter: "all", recSort: "due",
     bannerHidden: false, lastCat: {}, lastAccount: "",
   };
+
+  Object.defineProperty(ui, "month", { get: () => monthOf(ui.anchor), set: (m) => { ui.anchor = dayInMonth(m, Number(ui.anchor.slice(8))); } });
 
   function commit() {
     unsynced = true;
@@ -1791,8 +2033,11 @@ legend { padding: 0; margin-bottom: 8px; }
     let note;
     if (left <= 0) note = "Reached. Nicely done.";
     else if (a.deadline && a.deadline < t) note = `${W(left)} to go. The date you set has passed.`;
-    else if (a.deadline) note = `${W(left / Math.max(1, monthDiff(monthOf(t), monthOf(a.deadline))))} a month gets you there by ${fMonth(monthOf(a.deadline))}`;
-    else note = `${W(left)} to go`;
+    else if (a.deadline) {
+      const perDay = left / Math.max(1, daysBetween(t, a.deadline));
+      note = `${W(left / Math.max(1, monthDiff(monthOf(t), monthOf(a.deadline))))} a month, or ${money(perDay, { whole: perDay >= 10 })} a day, gets you there by ${fMonth(monthOf(a.deadline))}`;
+    }
+    else note = `${W(left)} to go. Add a target date to see what to put aside each month.`;
     return `<div class="goal"><button type="button" class="goal-main" data-act="edit-acct" data-id="${esc(a.id)}" aria-label="${esc(`${a.name}: ${W(b)} of ${W(a.target)} saved. Edit`)}">
       <span class="goal-head"><span class="ico" style="--c:${acctColor(a)}">${svg("target")}</span><span class="goal-name">${esc(a.name)}</span><span class="mono">${Math.round(pct)}%</span></span>
       <span class="goal-amt">${esc(W(b))} <small>of ${esc(W(a.target))}</small></span>
@@ -1801,12 +2046,28 @@ legend { padding: 0; margin-bottom: 8px; }
       <button type="button" class="btn small" data-act="fund" data-id="${esc(a.id)}">${svg("plus")}Add money</button></div>`;
   }
 
+  function debtCard(p, st) {
+    const owed = p.balance > 0, text = owed ? `${p.name} owes you` : `You owe ${p.name}`;
+    return `<div class="bill-wrap lift"><button type="button" class="poster bill" style="--c:#6D28D9" data-act="person" data-k="${esc(p.key)}" aria-label="${esc(`${text} ${money(Math.abs(p.balance))}, ${debtText(st)}. Show history`)}">${art({ icon: "person" })}
+      <span class="bill-top"><span class="pill ${st.overdue ? "overdue" : "soon"}">${esc(debtText(st))}</span><span class="mono">${esc(fDate(p.due))}</span></span>
+      <span class="poster-kicker">${owed ? "Lent · paying you back" : "Borrowed · to pay back"}</span>
+      <span class="poster-title">${esc(text)}</span>
+      <span class="p-amt">${esc(money(Math.abs(p.balance)))}</span></button>
+      <button type="button" class="pay-btn" data-act="settle" data-k="${esc(p.key)}" aria-label="${esc(`Settle up with ${p.name}`)}">${svg("check")}Settle</button></div>`;
+  }
+  function budgetAlerts(m) {
+    if (!state.settings.alerts) return "";
+    const list = budgetStatus(m).filter((b) => b.level >= 50).sort((a, b) => b.pct - a.pct);
+    if (!list.length) return "";
+    return `<div class="alerts" role="list" aria-label="Budget alerts">${list.map((b) => `<button type="button" role="listitem" class="alert-chip lvl-${b.level}" data-act="${b.id ? "go-cat" : "budgets"}"${b.id ? ` data-cat="${esc(b.id)}"` : ""}>${svg(b.level >= 100 ? "alert" : "bell")}<span><b>${esc(b.name)}</b> ${b.level >= 100 ? `over by ${esc(W(b.spent - b.total))}` : `${Math.floor(b.pct)}% used, ${esc(W(b.total - b.spent))} left`}</span></button>`).join("")}</div>`;
+  }
+
   /* ---------- home ---------- */
   function renderHome() {
     const t = todayISO(), m = monthOf(t), days = daysInMonth(m), day = Number(t.slice(8));
     const list = entriesIn(m);
     const { spent, income, net } = totals(list);
-    const budget = state.settings.budget;
+    const B = budgetFor(m), budget = B.total;
     const bills = billsIn(m, t);
     const cats = catTotals(list);
     const hue = cats[0] ? catById(cats[0].id).color : "";
@@ -1826,7 +2087,7 @@ legend { padding: 0; margin-bottom: 8px; }
       const pacePct = Math.min(100, (paceAmt / budget) * 100);
       if (left >= 0) {
         const perDay = Math.max(0, left - bills.unpaid) / daysLeft;
-        sub = `of your <b>${esc(W(budget))}</b> budget. <b>${esc(W(left))}</b> left` + (bills.unpaid > 0
+        sub = `of your <b>${esc(W(budget))}</b> budget${B.carry ? `, which includes ${esc(W(B.carry))} carried over from ${esc(fMonthName(addMonths(m, -1)))}` : ""}. <b>${esc(W(left))}</b> left` + (bills.unpaid > 0
           ? `, with ${esc(W(bills.unpaid))} of bills still to pay. That leaves about <b>${esc(W(perDay))} a day</b> for the next ${plural(daysLeft, "day")}.`
           : `. That's about <b>${esc(W(perDay))} a day</b> for the next ${plural(daysLeft, "day")}.`);
       } else {
@@ -1845,9 +2106,28 @@ legend { padding: 0; margin-bottom: 8px; }
     const budgetBtn = budget > 0 ? "" : `<button type="button" class="btn-ghost" data-act="budgets">${svg("target")}<span>Set a budget</span></button>`;
     const amount = W(Math.max(0, spent));
 
+    // Today at a glance
+    const todayList = state.entries.filter((e) => e.date === t);
+    const todaySpent = Math.max(0, totals(todayList).spent), nToday = todayList.filter((e) => e.type === "expense").length;
+    const streak = noSpendStreak(), liq = liquidity(bal);
+    const goalTarget = sum(goals.map((a) => a.target)), goalSaved = sum(goals.map((a) => bal.get(a.id) || 0));
+    const left = round2(budget - spent), perDay = Math.max(0, left - bills.unpaid) / daysLeft;
+    const glance = `<section class="wrap home-kpis" aria-label="Today at a glance"><div class="kpis">
+        ${kpi("Spent today", W(todaySpent), nToday ? plural(nToday, "expense") : streak > 1 ? `No-spend streak: ${plural(streak, "day")}` : "Nothing yet today")}
+        ${kpi("Available now", signed(liq.available, { whole: true }), liq.cardOwed > 0 ? `${W(liq.cardOwed)} owed on cards` : "Cash, bank and wallets", liq.available < 0 ? "bad" : "")}
+        ${kpi("Total savings", W(liq.saved), goalTarget > 0 ? `${Math.round((goalSaved / goalTarget) * 100)}% of your goal targets` : "Savings, investments and goals")}
+        ${budget > 0 ? kpi("Budget left", left >= 0 ? W(left) : `−${W(-left)}`, left >= 0 ? `${W(perDay)} a day for ${plural(daysLeft, "day")}` : "You're over budget", left < 0 ? "bad" : spent / budget >= 0.8 ? "warn" : "") : kpi("Budget left", "No budget", "Set one under Budgets")}
+      </div>${budgetAlerts(m)}</section>`;
+
+    // Bills and debts that are due, soonest first
+    const dueDebts = people().map((p) => ({ p, st: debtStatus(p) })).filter((x) => x.st && (x.st.overdue || x.st.soon));
+    const upcomingCards = [...dueDebts.map((x) => ({ due: x.p.due, html: debtCard(x.p, x.st) })), ...up.slice(0, 14).map(({ r, st }) => ({ due: st.due, html: billCard(r, st) }))].sort((a, b) => a.due.localeCompare(b.due));
+    const months6 = Array.from({ length: 6 }, (_, i) => addMonths(m, i - 5)), mt = months6.map((mm) => totals(entriesIn(mm)));
+
     const rows = [];
-    rows.push(row("Up next", "#recurring", "All recurring", up.length ? up.slice(0, 14).map(({ r, st }) => billCard(r, st)).join("") : emptyTile("Add rent, subscriptions, bills and your salary, and you'll see what's coming up.", "add-rec", "Add recurring")));
+    rows.push(row("Up next", "#recurring", "All recurring", upcomingCards.length ? upcomingCards.map((x) => x.html).join("") : emptyTile("Add rent, subscriptions, bills and your salary, and you'll see what's coming up.", "add-rec", "Add recurring")));
     if (accts.length) rows.push(row("Your money", "#wallet", "Wallet", accts.map((a) => acctCard(a, bal.get(a.id) || 0)).join("")));
+    if (mt.some((x) => x.income > 0 || x.spent > 0)) rows.push(`<section class="row"><div class="wrap row-head"><h2>In and out</h2><a class="see-all" href="#insights">Insights${svg("right")}</a></div><div class="wrap"><div class="card home-chart">${flowChart(months6, mt)}</div></div></section>`);
     const top = list.filter((e) => e.type === "expense").sort((a, b) => b.amount - a.amount).slice(0, 5);
     if (top.length) rows.push(row(`Top ${top.length} in ${fMonthName(m)}`, "#activity", "All activity", top.map((e, i) => topCard(e, i + 1)).join("")));
     const recent = [...state.entries].sort(byNewest).slice(0, 12);
@@ -1867,6 +2147,7 @@ legend { padding: 0; margin-bottom: 8px; }
           <div class="bb-actions"><button type="button" class="btn-play" data-act="add-entry">${svg("plus")}Add entry</button>${nextBtn}${budgetBtn}</div>
         </div></div>
       </section>
+      ${glance}
       <div class="rows">${rows.join("")}</div>`;
     bindRows();
   }
@@ -1884,17 +2165,28 @@ legend { padding: 0; margin-bottom: 8px; }
     });
   }
 
-  function monthNav() {
-    const cur = monthOf(todayISO());
-    const canNext = ui.month < addMonths(cur, 12);
-    return `<div class="month-nav"><button type="button" class="icon-btn" data-act="month-prev" aria-label="Previous month">${svg("left")}</button>${ui.month !== cur ? `<button type="button" class="btn small" data-act="month-now">This month</button>` : ""}<button type="button" class="icon-btn" data-act="month-next" aria-label="Next month"${canNext ? "" : " disabled"}>${svg("right")}</button></div>`;
+  /* Previous, next and back-to-now for whichever period a view shows. */
+  function periodNav(period) {
+    const t = todayISO();
+    const nextFrom = periodRange(period, stepAnchor(period, ui.anchor, 1)).from;
+    const canNext = nextFrom <= `${addMonths(monthOf(t), 12)}-01`;
+    const now = { day: "Today", week: "This week", month: "This month", year: "This year" }[period];
+    const word = PERIOD_WORD[period];
+    return `<div class="month-nav"><button type="button" class="icon-btn" data-act="period-prev" data-p="${period}" aria-label="Previous ${word}">${svg("left")}</button>${inPeriod(period, ui.anchor) ? "" : `<button type="button" class="btn small" data-act="period-now">${now}</button>`}<button type="button" class="icon-btn" data-act="period-next" data-p="${period}" aria-label="Next ${word}"${canNext ? "" : " disabled"}>${svg("right")}</button></div>`;
   }
+  const methodChoices = () => Object.entries(METHODS).filter(([k]) => k !== "upi" || state.settings.currency === "INR" || state.entries.some((e) => e.method === "upi"));
 
   /* ---------- activity ---------- */
+  function periodEntries(period) {
+    if (period === "all") return state.entries;
+    const r = periodRange(period, ui.anchor);
+    return entriesBetween(r.from, r.to);
+  }
   function activityList() {
-    let list = ui.actScope === "all" ? state.entries : entriesIn(ui.month);
+    let list = periodEntries(ui.actPeriod);
     if (ui.actAccount) list = list.filter((e) => e.account === ui.actAccount || e.to === ui.actAccount);
     if (ui.actPerson) list = list.filter((e) => personKey(e.person) === ui.actPerson);
+    if (ui.actMethod) list = list.filter((e) => e.method === ui.actMethod);
     const ty = ui.actType;
     if (ty === "expense") list = list.filter((e) => e.type === "expense" || e.type === "refund");
     else if (ty === "people") list = list.filter((e) => TYPES[e.type].person);
@@ -1905,21 +2197,27 @@ legend { padding: 0; margin-bottom: 8px; }
     return list;
   }
   function renderActivity() {
-    const all = ui.actScope === "all";
-    const cats = catTotals(all ? state.entries : entriesIn(ui.month)).slice(0, 8).map((c) => c.id);
+    const p = ui.actPeriod, all = p === "all", cal = ui.actView === "calendar" && p === "month";
+    const cats = catTotals(periodEntries(p)).slice(0, 8).map((c) => c.id);
     if (ui.actCat !== "all" && !cats.includes(ui.actCat)) cats.unshift(ui.actCat);
     const tchip = (k, label) => `<button type="button" class="chip" data-act="act-type" data-k="${k}" aria-pressed="${ui.actType === k}">${label}</button>`;
     const cchip = (id) => { const c = catById(id); return `<button type="button" class="chip" data-act="act-cat" data-cat="${esc(id)}" aria-pressed="${ui.actCat === id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`; };
     const pinned = [];
     if (ui.actAccount) pinned.push(`<button type="button" class="chip" data-act="act-clear-acct" aria-pressed="true" aria-label="${esc(`Showing ${acctName(ui.actAccount)} only. Show every account`)}">${esc(acctName(ui.actAccount))}${svg("x")}</button>`);
-    if (ui.actPerson) { const name = people().find((p) => p.key === ui.actPerson)?.name || ui.actPerson; pinned.push(`<button type="button" class="chip" data-act="act-clear-person" aria-pressed="true" aria-label="${esc(`Showing ${name} only. Show everyone`)}">${esc(name)}${svg("x")}</button>`); }
+    if (ui.actPerson) { const name = people().find((x) => x.key === ui.actPerson)?.name || ui.actPerson; pinned.push(`<button type="button" class="chip" data-act="act-clear-person" aria-pressed="true" aria-label="${esc(`Showing ${name} only. Show everyone`)}">${esc(name)}${svg("x")}</button>`); }
+    const seg = (k, label, cur, act) => `<button type="button" data-act="${act}" data-k="${k}" aria-pressed="${cur === k}">${label}</button>`;
+    const searchWhat = all ? "everything" : p === "month" ? fMonthName(monthOf(ui.anchor)) : `this ${PERIOD_WORD[p]}`;
     $("#view-activity").innerHTML = `<div class="wrap view-body">
-      <header class="view-head"><div><p class="eyebrow">Activity</p><h1 class="large-title">${all ? "All time" : esc(fMonth(ui.month))}</h1><p class="view-sub" id="act-summary"></p></div>${all ? "" : monthNav()}</header>
+      <header class="view-head"><div><p class="eyebrow">Activity</p><h1 class="large-title">${esc(periodLabel(p, ui.anchor))}</h1><p class="view-sub" id="act-summary"></p></div>${all ? "" : periodNav(p)}</header>
       <div class="toolbar">
-        <label class="search"><span class="sr">Search entries</span>${svg("search")}<input id="act-search" type="search" placeholder="Search ${all ? "everything" : esc(fMonthName(ui.month))}" value="${esc(ui.actQuery)}" autocomplete="off"></label>
-        <div class="seg" role="group" aria-label="Period"><button type="button" data-act="act-scope" data-k="month" aria-pressed="${!all}">Month</button><button type="button" data-act="act-scope" data-k="all" aria-pressed="${all}">All time</button></div>
-        <label class="select-wrap"><span class="sr">Sort entries</span><select id="act-sort" class="select">${opts([["new", "Newest first"], ["old", "Oldest first"], ["high", "Highest amount"], ["low", "Lowest amount"]], ui.actSort)}</select>${svg("down")}</label>
+        <label class="search"><span class="sr">Search entries</span>${svg("search")}<input id="act-search" type="search" placeholder="Search ${esc(searchWhat)}" value="${esc(ui.actQuery)}" autocomplete="off"></label>
         <button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button>
+      </div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Period">${Object.entries(PERIODS).map(([k, l]) => seg(k, l, p, "act-period")).join("")}</div>
+        <div class="seg" role="group" aria-label="Show as">${seg("list", "List", cal ? "calendar" : "list", "act-view")}${seg("calendar", `${svg("calendar")}Calendar`, cal ? "calendar" : "list", "act-view")}</div>
+        <label class="select-wrap"><span class="sr">Payment method</span><select id="act-method" class="select">${opts([["", "Every method"], ...methodChoices()], ui.actMethod)}</select>${svg("down")}</label>
+        ${cal ? "" : `<label class="select-wrap"><span class="sr">Sort entries</span><select id="act-sort" class="select">${opts([["new", "Newest first"], ["old", "Oldest first"], ["high", "Highest amount"], ["low", "Lowest amount"]], ui.actSort)}</select>${svg("down")}</label>`}
       </div>
       <div class="chips" role="group" aria-label="Filter entries">${pinned.join("")}${tchip("all", "All")}${tchip("expense", "Spending")}${tchip("income", "Income")}${tchip("transfer", "Transfers")}${tchip("people", "People")}${cats.length ? `<span class="chip-sep" aria-hidden="true"></span>${cats.map(cchip).join("")}` : ""}</div>
       <div id="act-list" class="exp-list"></div></div>`;
@@ -1927,11 +2225,11 @@ legend { padding: 0; margin-bottom: 8px; }
   }
   function itemRow(e, withDate) {
     const v = entryVisual(e), a = entryAmount(e);
-    return `<button type="button" class="item" data-act="edit-entry" data-id="${esc(e.id)}"><span class="ico" style="--c:${v.color}">${svg(v.icon)}</span><span class="min0"><span class="item-title">${esc(entryTitle(e))}</span><span class="item-meta">${entryMeta(e, withDate)}</span></span><span class="item-amt ${a.cls}">${esc(a.text)}</span></button>`;
+    return `<button type="button" class="item" data-act="edit-entry" data-id="${esc(e.id)}"><span class="ico" style="--c:${v.color}">${svg(v.icon)}</span><span class="min0"><span class="item-title">${esc(entryTitle(e))}</span><span class="item-meta">${entryMeta(e, withDate)}</span></span><span class="item-amt ${a.cls}">${esc(a.text)}${e.cur ? `<small>${esc(fmtCur(e.orig, e.cur))}</small>` : ""}</span></button>`;
   }
   function renderActList() {
     const el = $("#act-list"); if (!el) return;
-    const all = ui.actScope === "all";
+    const p = ui.actPeriod, all = p === "all";
     const found = activityList();
     const tt = totals(found);
     const bits = [];
@@ -1939,13 +2237,15 @@ legend { padding: 0; margin-bottom: 8px; }
     if (tt.income > 0) bits.push(`<b>${esc(money(tt.income))}</b> came in`);
     bits.push(plural(found.length, "entry", "entries"));
     $("#act-summary").innerHTML = found.length ? bits.join(" · ") : "";
-    const filtered = ui.actType !== "all" || ui.actCat !== "all" || ui.actQuery.trim() || ui.actAccount || ui.actPerson;
+    if (ui.actView === "calendar" && p === "month") { el.innerHTML = calendarHTML(monthOf(ui.anchor), found); return; }
+    const filtered = ui.actType !== "all" || ui.actCat !== "all" || ui.actQuery.trim() || ui.actAccount || ui.actPerson || ui.actMethod;
+    const where = all ? "" : p === "day" ? ` on ${fDateLong(ui.anchor)}` : p === "month" ? ` in ${fMonthName(monthOf(ui.anchor))}` : ` this ${PERIOD_WORD[p]}`;
     if (!found.length && !filtered) {
-      el.innerHTML = `<div class="empty"><h3>${all ? "Nothing logged yet" : `Nothing logged in ${esc(fMonthName(ui.month))}`}</h3><p>Add what you spend, earn, move or lend as you go, and it lands here grouped by day.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
+      el.innerHTML = `<div class="empty"><h3>${all ? "Nothing logged yet" : `Nothing logged${esc(where)}`}</h3><p>Add what you spend, earn, move or lend as you go, and it lands here grouped by day.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
       return;
     }
     if (!found.length) {
-      el.innerHTML = `<div class="empty"><h3>No matches</h3><p>Nothing ${all ? "you've logged" : `in ${esc(fMonthName(ui.month))}`} matches your search or filters.</p><button type="button" class="btn" data-act="clear-filters">Clear search and filters</button></div>`;
+      el.innerHTML = `<div class="empty"><h3>No matches</h3><p>Nothing${all ? " you've logged" : esc(where)} matches your search or filters.</p><button type="button" class="btn" data-act="clear-filters">Clear search and filters</button></div>`;
       return;
     }
     const CAP = 400;
@@ -1960,12 +2260,43 @@ legend { padding: 0; margin-bottom: 8px; }
     list = list.slice(0, CAP);
     const groups = [];
     for (const e of list) { const g = groups[groups.length - 1]; if (g && g.date === e.date) g.items.push(e); else groups.push({ date: e.date, items: [e] }); }
+    const longDates = p === "all" || p === "year";
     el.innerHTML = groups.map((g) => {
       const d = totals(g.items);
       const right = [d.income > 0 ? "+" + money(d.income) : "", d.spent > 0 ? money(d.spent) : ""].filter(Boolean).join(" · ");
-      const label = relDay(g.date) === fDate(g.date) ? (all ? fDateLong(g.date) : fDay(g.date)) : `${relDay(g.date)} · ${fDay(g.date)}`;
+      const label = relDay(g.date) === fDate(g.date) ? (longDates ? fDateLong(g.date) : fDay(g.date)) : `${relDay(g.date)} · ${fDay(g.date)}`;
       return `<section class="day"><div class="day-head"><span>${esc(label)}</span><span>${esc(right)}</span></div><div class="list">${g.items.map((e) => itemRow(e, false)).join("")}</div></section>`;
     }).join("") + more;
+  }
+  /* A month as a calendar: what went out each day, with no-spend days marked. Recurring bills don't break a no-spend day. */
+  function calendarHTML(m, found) {
+    const days = daysInMonth(m), t = todayISO(), first = firstEntryDate();
+    const lead = (parseISO(`${m}-01`).getDay() + 6) % 7;
+    const spent = new Map(), count = new Map(), income = new Map(), disc = new Set();
+    for (const e of found) {
+      spent.set(e.date, (spent.get(e.date) || 0) + spendOf(e));
+      if (e.type === "expense") count.set(e.date, (count.get(e.date) || 0) + 1);
+      if (e.type === "income") income.set(e.date, (income.get(e.date) || 0) + e.amount);
+    }
+    for (const e of entriesIn(m)) if (e.type === "expense" && !e.recurringId) disc.add(e.date);
+    const max = Math.max(0, ...spent.values());
+    const monday = weekStart(t);
+    const heads = Array.from({ length: 7 }, (_, i) => `<span class="cal-h" aria-hidden="true">${esc(DF.wd.format(parseISO(addDays(monday, i))))}</span>`).join("");
+    let cells = "";
+    for (let i = 0; i < lead; i++) cells += `<span class="cal-pad" aria-hidden="true"></span>`;
+    for (let d = 1; d <= days; d++) {
+      const date = `${m}-${pad(d)}`, sp = Math.max(0, round2(spent.get(date) || 0)), n = count.get(date) || 0, inc = income.get(date) || 0;
+      const future = date > t, tracked = first && date >= first;
+      const free = !future && tracked && !disc.has(date);
+      const heat = max > 0 ? Math.round((sp / max) * 34) : 0;
+      const label = `${fDay(date)}: ${sp > 0 ? `spent ${money(sp)} across ${plural(n, "entry", "entries")}` : future ? "still to come" : free ? "no spending" : "nothing spent"}${inc > 0 ? `, ${money(inc)} came in` : ""}`;
+      cells += `<button type="button" class="cal-day${date === t ? " today" : ""}${future ? " future" : ""}${free ? " free" : ""}" style="--heat:${heat}%" data-act="cal-day" data-d="${date}" aria-label="${esc(label)}">
+        <span class="cal-n">${d}</span>${sp > 0 ? `<span class="cal-amt">${esc(compact(sp))}</span>` : free ? `<span class="cal-free">${svg("check")}<span>No spend</span></span>` : ""}${inc > 0 ? `<span class="cal-in">+${esc(compact(inc))}</span>` : ""}</button>`;
+    }
+    const ns = noSpendStats(`${m}-01`, `${m}-${pad(days)}`);
+    const streak = inPeriod("month", `${m}-01`) ? noSpendStreak() : 0;
+    const stats = ns.counted ? `<div class="cal-stats"><span><b>${ns.count}</b> no-spend ${ns.count === 1 ? "day" : "days"} out of ${ns.counted}</span><span>Longest run <b>${plural(ns.longest, "day")}</b></span>${streak ? `<span>Current streak <b>${plural(streak, "day")}</b></span>` : ""}<span class="hint">Recurring bills don't count as spending here.</span></div>` : "";
+    return `${stats}<div class="cal" role="group" aria-label="${esc(`${fMonth(m)} calendar. Pick a day to see its entries.`)}">${heads}${cells}</div>`;
   }
 
   /* ---------- recurring ---------- */
@@ -1977,6 +2308,11 @@ legend { padding: 0; margin-bottom: 8px; }
     const perMonth = (kind) => round2(active.filter((x) => x.r.kind === kind && x.st).reduce((n, x) => n + x.r.amount * FREQ[x.r.frequency].perMonth, 0));
     const out = perMonth("expense"), inc = perMonth("income");
     const paused = rows.length - active.length;
+    const subs = subscriptions();
+    const subsCard = subs.list.length ? `<section class="card subs" aria-label="Subscriptions">
+        <div class="card-head split"><div><h3>Subscriptions</h3><p><b>${esc(W(subs.monthly))}</b> a month · ${esc(W(subs.yearly))} a year · ${plural(subs.list.length, "active subscription")}</p></div><button type="button" class="btn small" data-act="rec-filter" data-f="subs">Show only these</button></div>
+        <div class="subs-list">${subs.list.map(({ r, st, monthly }) => `<button type="button" class="sub-chip" data-act="edit-rec" data-id="${esc(r.id)}"><span class="sub-name">${esc(r.name)}</span><span class="sub-amt">${esc(money(monthly))}<small>/mo</small></span><span class="sub-next">Next ${esc(fDate(st.due))}${r.frequency !== "monthly" ? ` · ${esc(FREQ[r.frequency].label.toLowerCase())}` : ""}</span></button>`).join("")}</div>
+      </section>` : "";
     const seg = (k, label, n) => `<button type="button" data-act="rec-filter" data-f="${k}" aria-pressed="${ui.recFilter === k}">${esc(label)}<span class="count">${n}</span></button>`;
     $("#view-recurring").innerHTML = `<div class="wrap view-body">
       <header class="view-head"><div><p class="eyebrow">Recurring</p><h1 class="large-title">Bills and regulars</h1><p class="view-sub">Rent, subscriptions, salary, savings and anything else that comes round again. Deal with one and it lands in your activity.</p></div>
@@ -1987,9 +2323,10 @@ legend { padding: 0; margin-bottom: 8px; }
         ${kpi("Overdue", String(overdue.length), overdue.length ? W(sum(overdue.map((x) => x.r.amount))) : "Nothing late", overdue.length ? "bad" : "")}
         ${kpi("Due in 7 days", String(soon.length), soon.length ? W(sum(soon.map((x) => x.r.amount))) : "Nothing this week", soon.length ? "warn" : "")}
       </div>
+      ${subsCard}
       <div class="toolbar">
         <label class="search"><span class="sr">Search recurring items</span>${svg("search")}<input id="rec-search" type="search" placeholder="Search recurring" value="${esc(ui.recQuery)}" autocomplete="off"></label>
-        <div class="seg" role="group" aria-label="Show">${seg("all", "All", rows.length)}${seg("overdue", "Overdue", overdue.length)}${seg("soon", "Due in 7 days", soon.length)}${seg("paused", "Paused", paused)}</div>
+        <div class="seg" role="group" aria-label="Show">${seg("all", "All", rows.length)}${seg("overdue", "Overdue", overdue.length)}${seg("soon", "Due in 7 days", soon.length)}${seg("subs", "Subscriptions", subs.list.length)}${seg("paused", "Paused", paused)}</div>
         <label class="select-wrap"><span class="sr">Sort recurring items</span><select id="rec-sort" class="select">${opts([["due", "Next due"], ["amount", "Amount"], ["name", "Name"], ["status", "Status"]], ui.recSort)}</select>${svg("down")}</label>
       </div>
       <div id="rec-list"></div></div>`;
@@ -2002,6 +2339,7 @@ legend { padding: 0; margin-bottom: 8px; }
     let rows = all;
     const f = ui.recFilter;
     if (f === "paused") rows = rows.filter((x) => x.r.active === false);
+    else if (f === "subs") rows = rows.filter((x) => isSubscription(x.r));
     else if (f !== "all") rows = rows.filter((x) => x.r.active !== false && x.st && (f === "overdue" ? x.st.overdue : x.st.soon));
     const q = ui.recQuery.trim().toLowerCase();
     if (q) rows = rows.filter((x) => `${x.r.name} ${x.r.category ? catById(x.r.category, x.r.kind).name : ""} ${RKIND[x.r.kind].label} ${x.r.note}`.toLowerCase().includes(q));
@@ -2045,7 +2383,8 @@ legend { padding: 0; margin-bottom: 8px; }
       const tone = p.balance > 0 ? "in" : p.balance < 0 ? "warn" : "";
       const text = p.balance > 0 ? `Owes you ${money(p.balance)}` : p.balance < 0 ? `You owe ${money(-p.balance)}` : "Settled up";
       const initials = p.name.trim().split(/\s+/).slice(0, 2).map((w) => [...w][0]).join("").toUpperCase();
-      return `<div class="prow"><button type="button" class="pmain" data-act="person" data-k="${esc(p.key)}" aria-label="${esc(`${p.name}. ${text}. Show history`)}"><span class="avatar" aria-hidden="true">${esc(initials)}</span><span class="min0"><span class="item-title">${esc(p.name)}</span><span class="item-meta">${plural(p.count, "entry", "entries")} · last ${esc(fDate(p.last))}</span></span></button><span class="p-bal ${tone}">${esc(text)}</span>${p.balance ? `<button type="button" class="btn small" data-act="settle" data-k="${esc(p.key)}">Settle up</button>` : ""}</div>`;
+      const ds = debtStatus(p), dueText = ds ? debtText(ds) || `Due ${fDate(p.due)}` : "";
+      return `<div class="prow"><button type="button" class="pmain" data-act="person" data-k="${esc(p.key)}" aria-label="${esc(`${p.name}. ${text}${dueText ? `. ${dueText}` : ""}. Show history`)}"><span class="avatar" aria-hidden="true">${esc(initials)}</span><span class="min0"><span class="item-title">${esc(p.name)}</span><span class="item-meta">${plural(p.count, "entry", "entries")} · last ${esc(fDate(p.last))}</span></span></button>${dueText ? `<span class="pill ${ds.overdue ? "overdue" : ds.soon ? "soon" : "paused"}">${esc(dueText)}</span>` : ""}<span class="p-bal ${tone}">${esc(text)}</span>${p.balance ? `<button type="button" class="btn small" data-act="settle" data-k="${esc(p.key)}">Settle up</button>` : ""}</div>`;
     };
     $("#view-wallet").innerHTML = `<div class="wrap view-body">
       <header class="view-head"><div><p class="eyebrow">Wallet · Net worth</p><h1 class="large-title">${esc(signed(wo.net))}</h1><p class="view-sub">Everything in your accounts and goals, plus what you're owed, minus what you owe.</p></div></header>
@@ -2098,73 +2437,94 @@ legend { padding: 0; margin-bottom: 8px; }
       <div class="vchart flow" role="img" aria-label="${esc(`Money in and money spent for the six months to ${fMonth(months[5])}: ${months.map((mm, i) => `${fMon(mm)} in ${W(inc[i])}, spent ${W(out[i])}`).join("; ")}.`)}"><div class="plot">${grid}<div class="cols">${cols}</div></div><div class="xl" aria-hidden="true">${months.map((mm) => `<span>${esc(fMon(mm))}</span>`).join("")}</div></div>
       <details class="tbl wide"><summary>Show monthly amounts</summary><div class="tbl-scroll"><table><thead><tr><th>Month</th><th>Came in</th><th>Spent</th><th>Kept</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
   }
-  function budgetRows(cats, spent) {
-    const budget = state.settings.budget;
-    const spentBy = new Map(cats.map((c) => [c.id, c.total]));
-    const line = (name, color, sp, bud) => {
-      const left = round2(bud - sp), pct = Math.max(0, Math.min(100, (sp / bud) * 100));
-      const tone = left < 0 ? "bad" : pct >= 85 ? "warn" : "";
-      return `<div class="brow"><div class="brow-top"><span class="brow-name">${color ? `<i style="background:${color}"></i>` : ""}${esc(name)}</span><span class="brow-val"><b>${esc(W(sp))}</b> of ${esc(W(bud))}</span></div><span class="meter ${tone}" role="img" aria-label="${Math.round((sp / bud) * 100)}% used"><i style="width:${pct}%"></i></span><span class="brow-note ${tone}">${left < 0 ? `Over by ${esc(W(-left))}` : `${esc(W(left))} left`}</span></div>`;
-    };
-    const lines = [];
-    if (budget > 0) lines.push(line("Whole month", "", Math.max(0, spent), budget));
-    for (const c of state.categories) if (c.kind === "expense" && c.budget > 0) lines.push(line(c.name, c.color, spentBy.get(c.id) || 0, c.budget));
-    return lines.length ? `<div class="brows">${lines.join("")}</div>` : `<p class="hint">No budgets yet. Set a limit for the month or for single categories and you'll see how you're doing here.</p>`;
+  /* Budgets for a month, each with markers at 50% and 80%. */
+  function budgetRows(m) {
+    const rows = budgetStatus(m);
+    if (!rows.length) return `<p class="hint">No budgets yet. Set a limit for the month or for single categories and you'll see how you're doing here.</p>`;
+    const prevName = fMonthName(addMonths(m, -1));
+    return `<div class="brows">${rows.map((b) => {
+      const left = round2(b.total - b.spent), pct = Math.max(0, Math.min(100, b.pct));
+      const tone = b.level >= 100 ? "bad" : b.level >= 80 ? "warn" : "";
+      return `<div class="brow"><div class="brow-top"><span class="brow-name">${b.color ? `<i style="background:${b.color}"></i>` : ""}${esc(b.name === "Monthly budget" ? "Whole month" : b.name)}</span><span class="brow-val"><b>${esc(W(b.spent))}</b> of ${esc(W(b.total))}</span></div>
+        <span class="meter marks ${tone}" role="img" aria-label="${Math.round(b.pct)}% used"><i style="width:${pct}%"></i></span>
+        <span class="brow-note ${tone}">${left < 0 ? `Over by ${esc(W(-left))}` : `${esc(W(left))} left`}${b.carry ? ` · includes ${esc(W(b.carry))} carried over from ${esc(prevName)}` : ""}</span></div>`;
+    }).join("")}</div>`;
+  }
+  function hbarList(items, total, nameOf, colorOf, act) {
+    const max = items[0]?.total || 1;
+    return `<div class="hbars">${items.map((x) => {
+      const pct = total > 0 ? (x.total / total) * 100 : 0;
+      return `<button type="button" class="hbar" ${act(x)} data-tip="${esc(`${nameOf(x)} · ${plural(x.count, "expense")}`)}"><span class="hbar-name"><i style="background:${colorOf(x)}"></i>${esc(nameOf(x))}</span><span class="hbar-track"><span class="hbar-fill" style="width:${(x.total / max) * 100}%"></span></span><span class="hbar-val">${esc(W(x.total))}<small>${pct > 0 && pct < 1 ? "<1" : Math.round(pct)}%</small></span></button>`;
+    }).join("")}</div>`;
   }
 
-  /* ---------- insights ---------- */
+  /* ---------- insights: a report for a week, a month or a year ---------- */
   function renderInsights() {
-    const m = ui.month, t = todayISO(), cur = monthOf(t), isCur = m === cur;
-    const days = daysInMonth(m);
-    const elapsed = isCur ? Number(t.slice(8)) : m < cur ? days : 0;
-    const list = entriesIn(m);
+    const p = ui.insPeriod, t = todayISO(), r = periodRange(p, ui.anchor), isCur = inPeriod(p, ui.anchor);
+    const m = monthOf(ui.anchor);
+    const list = entriesBetween(r.from, r.to);
     const { spent, income, net } = totals(list);
-    const daily = Array.from({ length: days }, () => 0);
-    for (const e of list) daily[Number(e.date.slice(8)) - 1] += spendOf(e);
-    for (let i = 0; i < days; i++) daily[i] = Math.max(0, round2(daily[i]));
-    const pm = addMonths(m, -1);
-    const prev = totals(entriesIn(pm).filter((e) => !isCur || Number(e.date.slice(8)) <= elapsed)).spent;
+    const span = daysBetween(r.from, r.to) + 1;
+    const elapsed = isCur ? daysBetween(r.from, t) + 1 : r.to < t ? span : 0;
+    const pr = periodRange(p, stepAnchor(p, ui.anchor, -1));
+    const prev = totals(entriesBetween(pr.from, isCur ? addDays(pr.from, elapsed - 1) : pr.to)).spent;
     const change = prev > 0 ? (spent - prev) / prev : null;
-    const cats = catTotals(list);
-    const months = Array.from({ length: 6 }, (_, i) => addMonths(m, i - 5));
-    const mt = months.map((mm) => totals(entriesIn(mm)));
-    const budget = state.settings.budget;
-    const changeText = change === null ? "Nothing to compare" : `${change > 0 ? "▲" : change < 0 ? "▼" : ""} ${Math.abs(Math.round(change * 100))}%`;
-    const peak = daily.reduce((bi, v, i) => (v > daily[bi] ? i : bi), 0);
+    const prevName = p === "week" ? (isCur ? "last week" : "the week before") : p === "year" ? pr.from.slice(0, 4) : fMonthName(monthOf(pr.from));
+    const cats = catTotals(list), methods = methodTotals(list);
+    const B = budgetFor(m);
     const nIncome = list.filter((e) => e.type === "income").length;
+    const changeText = change === null ? "Nothing to compare" : `${change > 0 ? "▲" : change < 0 ? "▼" : ""} ${Math.abs(Math.round(change * 100))}%`;
+
+    // The spending chart: days for a week or a month, months for a year
+    let chart;
+    if (p === "year") {
+      const months = Array.from({ length: 12 }, (_, i) => `${r.from.slice(0, 4)}-${pad(i + 1)}`);
+      const vals = months.map((mm) => Math.max(0, totals(entriesIn(mm)).spent));
+      const peak = vals.reduce((bi, v, i) => (v > vals[bi] ? i : bi), 0);
+      chart = { title: "Month by month", sub: `What you spent each month in ${r.from.slice(0, 4)}.${state.settings.budget > 0 ? " The dashed line is your monthly budget." : ""}`, html: vchart({
+        values: vals, labels: months.map(fMon), tips: months.map((mm, i) => `${fMonth(mm)} · ${money(vals[i])}`), showLabel: () => true,
+        ref: state.settings.budget || 0, refLabel: "", aria: `Spending each month in ${r.from.slice(0, 4)}. The highest was ${fMonth(months[peak])} at ${money(vals[peak])}.`,
+      }), rows: months.map((mm, i) => [fMonth(mm), vals[i]]) };
+    } else {
+      const dates = Array.from({ length: span }, (_, i) => addDays(r.from, i));
+      const byDay = new Map(dates.map((d) => [d, 0]));
+      for (const e of list) byDay.set(e.date, (byDay.get(e.date) || 0) + spendOf(e));
+      const vals = dates.map((d) => Math.max(0, round2(byDay.get(d))));
+      const peak = vals.reduce((bi, v, i) => (v > vals[bi] ? i : bi), 0);
+      const daily = B.total > 0 ? B.total / daysInMonth(m) : 0;
+      chart = { title: "Day by day", sub: `What you spent each day${p === "week" ? " this week" : ` in ${fMonthName(m)}`}.${daily ? " The dashed line is your budget split evenly across the month." : ""}`, html: vchart({
+        values: vals, labels: dates.map((d) => (p === "week" ? DF.wd.format(parseISO(d)) : String(Number(d.slice(8))))),
+        tips: dates.map((d, i) => `${fDay(d)} · ${money(vals[i])}`), showLabel: (i) => p === "week" || i === 0 || (i + 1) % 5 === 0,
+        ref: daily, refLabel: daily ? `Even share ${W(daily)} a day` : "", aria: `Daily spending for ${periodLabel(p, ui.anchor)}. The highest day was ${fDate(dates[peak])} at ${money(vals[peak])}.`,
+      }), rows: dates.filter((d, i) => vals[i] > 0).map((d) => [fDay(d), Math.max(0, round2(byDay.get(d)))]) };
+    }
+    const flowMonths = p === "year" ? Array.from({ length: 12 }, (_, i) => `${r.from.slice(0, 4)}-${pad(i + 1)}`) : Array.from({ length: 6 }, (_, i) => addMonths(m, i - 5));
+    const flowTotals = flowMonths.map((mm) => totals(entriesIn(mm)));
 
     let body;
     if (!list.length) {
-      body = `<div class="empty"><h3>Nothing to chart for ${esc(fMonthName(m))}</h3><p>Once you add entries for this month, you'll see daily spending, categories, budgets and how it compares with earlier months.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
+      body = `<div class="empty"><h3>Nothing to chart for ${esc(periodLabel(p, ui.anchor))}</h3><p>Once you add entries for this ${PERIOD_WORD[p]}, you'll see your spending by day and category, budgets, payment methods and how it compares with before.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
     } else {
-      const dailyChart = vchart({
-        values: daily, labels: daily.map((_, i) => String(i + 1)),
-        tips: daily.map((v, i) => `${fDay(`${m}-${pad(i + 1)}`)} · ${money(v)}`),
-        showLabel: (i) => i === 0 || (i + 1) % 5 === 0,
-        ref: budget > 0 ? budget / days : 0, refLabel: budget > 0 ? `Even share ${W(budget / days)} a day` : "",
-        aria: `Daily spending in ${fMonth(m)}. The highest day was ${fDate(`${m}-${pad(peak + 1)}`)} at ${money(daily[peak])}.`,
-      });
-      const maxCat = cats[0]?.total || 1;
-      const catBars = cats.length ? `<div class="hbars">${cats.map((ct) => {
-        const c = catById(ct.id), pct = spent > 0 ? (ct.total / spent) * 100 : 0;
-        return `<button type="button" class="hbar" data-act="go-cat" data-cat="${esc(c.id)}" data-tip="${esc(`${c.name} · ${plural(ct.count, "expense")}`)}"><span class="hbar-name"><i style="background:${c.color}"></i>${esc(c.name)}</span><span class="hbar-track"><span class="hbar-fill" style="width:${(ct.total / maxCat) * 100}%"></span></span><span class="hbar-val">${esc(W(ct.total))}<small>${pct > 0 && pct < 1 ? "<1" : Math.round(pct)}%</small></span></button>`;
-      }).join("")}</div>` : `<p class="hint">No spending logged this month.</p>`;
-      const dayRows = daily.map((v, i) => [i, v]).filter(([, v]) => v > 0).map(([i, v]) => `<tr><td>${esc(fDay(`${m}-${pad(i + 1)}`))}</td><td>${esc(money(v))}</td></tr>`).join("");
+      const catBars = cats.length ? hbarList(cats, spent, (x) => catById(x.id).name, (x) => catById(x.id).color, (x) => `data-act="go-cat" data-cat="${esc(x.id)}"`) : `<p class="hint">No spending logged.</p>`;
+      const methodBars = methods.length ? hbarList(methods, spent, (x) => METHODS[x.id] || "Other", (x) => METHOD_COLORS[x.id] || "#52525B", (x) => `data-act="go-method" data-k="${esc(x.id)}"`) : `<p class="hint">No spending logged.</p>`;
       body = `<div class="insights">
-        <section class="card span2"><div class="card-head"><h3>Day by day</h3><p>What you spent each day in ${esc(fMonthName(m))}.${budget > 0 ? " The dashed line is your budget split evenly across the month." : ""}</p></div>${dailyChart}
-          <details class="tbl"><summary>Show daily amounts</summary><div class="tbl-scroll"><table><thead><tr><th>Day</th><th>Spent</th></tr></thead><tbody>${dayRows}</tbody></table></div></details></section>
+        <section class="card span2"><div class="card-head"><h3>${chart.title}</h3><p>${esc(chart.sub)}</p></div>${chart.html}
+          <details class="tbl"><summary>Show the amounts</summary><div class="tbl-scroll"><table><thead><tr><th>${p === "year" ? "Month" : "Day"}</th><th>Spent</th></tr></thead><tbody>${chart.rows.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${esc(money(v))}</td></tr>`).join("")}</tbody></table></div></details></section>
         <section class="card"><div class="card-head"><h3>By category</h3><p>Tap a category to see its entries.</p></div>${catBars}</section>
-        <section class="card"><div class="card-head split"><div><h3>Budgets</h3><p>How ${esc(fMonthName(m))} compares with the limits you set.</p></div><button type="button" class="btn small" data-act="budgets">Edit budgets</button></div>${budgetRows(cats, spent)}</section>
-        <section class="card span2"><div class="card-head"><h3>In and out</h3><p>What came in and what you spent over six months, ending with ${esc(fMonthName(m))}.</p></div>${flowChart(months, mt)}</section>
+        <section class="card"><div class="card-head split"><div><h3>Budgets</h3><p>${p === "month" ? `How ${esc(fMonthName(m))} compares with the limits you set.` : `Budgets are monthly. This is ${esc(fMonthName(m))}.`}</p></div><button type="button" class="btn small" data-act="budgets">Edit budgets</button></div>${budgetRows(m)}</section>
+        <section class="card"><div class="card-head"><h3>By payment method</h3><p>How you paid: UPI, cards, cash and the rest.</p></div>${methodBars}</section>
+        <section class="card"><div class="card-head"><h3>In and out</h3><p>What came in and what you spent ${p === "year" ? `each month of ${esc(r.from.slice(0, 4))}` : `over six months, ending with ${esc(fMonthName(m))}`}.</p></div>${flowChart(flowMonths, flowTotals)}</section>
       </div>`;
     }
+    const seg = (k, l) => `<button type="button" data-act="ins-period" data-k="${k}" aria-pressed="${p === k}">${l}</button>`;
     $("#view-insights").innerHTML = `<div class="wrap view-body">
-      <header class="view-head"><div><p class="eyebrow">Insights</p><h1 class="large-title">${esc(fMonth(m))}</h1></div>${monthNav()}</header>
+      <header class="view-head"><div><p class="eyebrow">Insights</p><h1 class="large-title">${esc(periodLabel(p, ui.anchor))}</h1></div>
+        <div class="head-tools"><div class="seg" role="group" aria-label="Report period">${seg("week", "Week")}${seg("month", "Month")}${seg("year", "Year")}</div>${periodNav(p)}</div></header>
       <div class="kpis">
-        ${kpi("Spent", W(Math.max(0, spent)), elapsed ? `${W(Math.max(0, spent) / elapsed)} a day on average` : "This month hasn't started")}
+        ${kpi("Spent", W(Math.max(0, spent)), elapsed ? `${W(Math.max(0, spent) / elapsed)} a day on average` : `This ${PERIOD_WORD[p]} hasn't started`)}
         ${kpi("Came in", W(income), nIncome ? plural(nIncome, "income entry", "income entries") : "No income logged")}
-        ${income > 0 ? kpi(net >= 0 ? "Kept" : "Short by", W(Math.abs(net)), net >= 0 ? `${Math.round((net / income) * 100)}% of what came in` : "You spent more than came in", net >= 0 ? "good" : "bad") : kpi("Kept", "None yet", "Add income to see what you keep")}
-        ${kpi(`Spending against ${fMonthName(pm)}`, changeText, change === null ? `${fMonthName(pm)} had nothing logged` : isCur ? `${W(prev)} by day ${elapsed} last month` : `${W(prev)} in ${fMonthName(pm)}`, change === null ? "" : change > 0.05 ? "warn" : change < -0.05 ? "good" : "")}
+        ${income > 0 ? kpi(net >= 0 ? "Kept" : "Short by", W(Math.abs(net)), net >= 0 ? `A savings rate of ${Math.round((net / income) * 100)}%` : "You spent more than came in", net >= 0 ? "good" : "bad") : kpi("Kept", "None yet", "Add income to see your savings rate")}
+        ${kpi(`Spending against ${prevName}`, changeText, change === null ? `Nothing logged for ${prevName}` : isCur ? `${W(prev)} at the same point` : `${W(prev)} in ${prevName}`, change === null ? "" : change > 0.05 ? "warn" : change < -0.05 ? "good" : "")}
       </div>${body}</div>`;
   }
 
@@ -2208,8 +2568,9 @@ legend { padding: 0; margin-bottom: 8px; }
   /* ---------- an entry of any type ---------- */
   function entryForm(item = null, preset = {}) {
     const d = item
-      ? { type: item.type, amount: String(item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note }
-      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", title: "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "" };
+      ? { type: item.type, amount: String(item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note, method: item.method, due: item.due }
+      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", title: preset.title || "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "", method: preset.method || "", due: "" };
+    let methodTouched = !!(item || preset.method);
     const pool = () => state.accounts.filter((a) => !a.archived || a.id === d.account || a.id === d.to);
     const fix = () => { // keep the draft valid for its type
       const T = TYPES[d.type], list = pool();
@@ -2218,10 +2579,11 @@ legend { padding: 0; margin-bottom: 8px; }
         d.category = (state.categories.find((c) => c.id === ui.lastCat[T.cat] && c.kind === T.cat) || state.categories.find((c) => c.kind === T.cat)).id;
       }
       if (d.type === "transfer" && (d.to === d.account || !list.some((a) => a.id === d.to))) d.to = (list.find((a) => a.id !== d.account) || {}).id || "";
+      if (d.type !== "transfer" && (!methodTouched || !METHODS[d.method])) d.method = methodFor(acctById(d.account)?.type, state.settings.currency);
     };
     const read = () => { // pull what's been typed back into the draft
       const get = (id, key) => { const el = document.getElementById(id); if (el) d[key] = el.value; };
-      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person");
+      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person"); get("f-method", "method"); get("f-due", "due");
       const c = $("#sheet-card input[name=category]:checked");
       if (c) d.category = c.value;
     };
@@ -2235,8 +2597,9 @@ legend { padding: 0; margin-bottom: 8px; }
         ${T.cat ? categoryPicker(d.category, T.cat) : ""}
         <div class="grid2">
           <label class="field"><span class="lab">${T.verb}</span>${select("f-account", list, d.account)}</label>
-          ${d.type === "transfer" ? `<label class="field"><span class="lab">To</span>${select("f-to", list, d.to, ' aria-describedby="e-to"')}<span class="err" id="e-to" hidden></span></label>` : ""}
+          ${d.type === "transfer" ? `<label class="field"><span class="lab">To</span>${select("f-to", list, d.to, ' aria-describedby="e-to"')}<span class="err" id="e-to" hidden></span></label>` : `<label class="field"><span class="lab">${IN_TYPES.has(d.type) ? "Received by" : "Paid with"}</span>${select("f-method", methodChoices(), d.method)}</label>`}
           <label class="field"><span class="lab">Date</span><input class="input" type="date" id="f-date" value="${esc(d.date)}" aria-describedby="e-date"><span class="err" id="e-date" hidden></span></label>
+          ${d.type === "lent" || d.type === "borrowed" ? `<label class="field"><span class="lab">${d.type === "lent" ? "They'll pay back by" : "You'll pay back by"} <span class="opt-lab">(optional)</span></span><input class="input" type="date" id="f-due" value="${esc(d.due)}" aria-describedby="e-due"><span class="err" id="e-due" hidden></span></label>` : ""}
           <label class="field"><span class="lab">Note <span class="opt-lab">(optional)</span></span><input class="input" id="f-note" maxlength="140" value="${esc(d.note)}" autocomplete="off"></label>
         </div>
         ${item?.recurringId && state.recurring.some((r) => r.id === item.recurringId) ? `<p class="hint">This entry belongs to a recurring item. Deleting it marks that cycle as not done.</p>` : ""}`;
@@ -2264,20 +2627,37 @@ legend { padding: 0; margin-bottom: 8px; }
         if (T.person && !person) return stop("f-person");
         if (!toOk) return stop("f-to");
         if (!isDate(d.date)) return stop("f-date");
-        const data = { type: d.type, title: d.title.trim(), amount, category: T.cat ? d.category : "", date: d.date, account: d.account, to: d.type === "transfer" ? d.to : "", person: T.person ? person : "", note: d.note.trim() };
+        const hasDue = d.type === "lent" || d.type === "borrowed";
+        const dueOk = !hasDue || !d.due || (isDate(d.due) && d.due >= d.date);
+        showErr("e-due", dueOk ? "" : "Pick a date on or after the day of the entry.");
+        if (!dueOk) return stop("f-due");
+        const data = {
+          type: d.type, title: d.title.trim(), amount, category: T.cat ? d.category : "", date: d.date, account: d.account, to: d.type === "transfer" ? d.to : "",
+          person: T.person ? person : "", note: d.note.trim(), method: d.type === "transfer" ? "" : METHODS[d.method] ? d.method : "other", due: hasDue && d.due ? d.due : "",
+        };
         if (T.cat) ui.lastCat[T.cat] = d.category;
         ui.lastAccount = d.account;
+        const m = monthOf(d.date), before = budgetStatus(m);
+        let msg;
         if (item) {
           const e = state.entries.find((x) => x.id === item.id);
           if (e) Object.assign(e, data);
-          commit(); toast("Saved");
+          commit(); msg = "Saved";
         } else {
-          state.entries.push({ id: uid(), ...data, recurringId: null });
+          state.entries.push({ id: uid(), ...data, recurringId: null, cur: "", orig: 0, rate: 0 });
           commit();
-          toast(monthOf(d.date) === monthOf(todayISO()) ? `${entryTitle(data)} added` : `${entryTitle(data)} added to ${fMonth(monthOf(d.date))}`);
+          msg = m === monthOf(todayISO()) ? `${entryTitle(data)} added` : `${entryTitle(data)} added to ${fMonth(m)}`;
         }
+        const crossed = state.settings.alerts ? crossedLevels(before, budgetStatus(m)).sort((a, b) => b.level - a.level) : [];
+        toast(crossed.length ? `${msg}. ${levelText(crossed[0])}` : msg);
       },
       onDelete: item ? () => { closeSheet(); deleteEntry(item.id); } : null,
+      onMount(card) {
+        card.addEventListener("change", (e) => {
+          if (e.target.id === "f-method") methodTouched = true;
+          if (e.target.id === "f-account" && !methodTouched && $("#f-method")) $("#f-method").value = methodFor(acctById(e.target.value)?.type, state.settings.currency);
+        });
+      },
     });
   }
   function deleteEntry(id) {
@@ -2291,8 +2671,8 @@ legend { padding: 0; margin-bottom: 8px; }
   /* ---------- recurring ---------- */
   function recurringForm(item = null) {
     const d = item
-      ? { kind: item.kind, name: item.name, amount: String(item.amount), category: item.category, frequency: item.frequency, start: item.start, end: item.end, variable: item.variable, auto: item.auto, account: item.account, to: item.to, note: item.note, active: item.active !== false }
-      : { kind: "expense", name: "", amount: "", category: "", frequency: "monthly", start: todayISO(), end: "", variable: false, auto: false, account: "", to: "", note: "", active: true };
+      ? { kind: item.kind, name: item.name, amount: String(item.amount), category: item.category, frequency: item.frequency, start: item.start, end: item.end, variable: item.variable, auto: item.auto, account: item.account, to: item.to, note: item.note, active: item.active !== false, method: item.method }
+      : { kind: "expense", name: "", amount: "", category: "", frequency: "monthly", start: todayISO(), end: "", variable: false, auto: false, account: "", to: "", note: "", active: true, method: "" };
     const pool = () => state.accounts.filter((a) => !a.archived || a.id === d.account || a.id === d.to);
     const fix = () => {
       const list = pool();
@@ -2305,7 +2685,7 @@ legend { padding: 0; margin-bottom: 8px; }
     const read = () => {
       const get = (id, key) => { const el = document.getElementById(id); if (el) d[key] = el.type === "checkbox" ? el.checked : el.value; };
       get("r-name", "name"); get("r-amount", "amount"); get("r-category", "category"); get("r-frequency", "frequency"); get("r-start", "start"); get("r-end", "end");
-      get("r-account", "account"); get("r-to", "to"); get("r-variable", "variable"); get("r-auto", "auto"); get("r-note", "note"); get("r-active", "active");
+      get("r-account", "account"); get("r-method", "method"); get("r-to", "to"); get("r-variable", "variable"); get("r-auto", "auto"); get("r-note", "note"); get("r-active", "active");
     };
     const TEXT = {
       expense: { eg: "e.g. Rent", acct: "Usually paid from", auto: "Add it by itself on the due date, like a subscription that charges your card" },
@@ -2324,6 +2704,7 @@ legend { padding: 0; margin-bottom: 8px; }
           <label class="field"><span class="lab">Ends on <span class="opt-lab">(optional)</span></span><input class="input" type="date" id="r-end" value="${esc(d.end)}" aria-describedby="e-end h-end"><span class="hint" id="h-end">For loans and instalments.</span><span class="err" id="e-end" hidden></span></label>
           ${d.kind === "transfer" ? "" : `<label class="field"><span class="lab">Category</span>${select("r-category", state.categories.filter((c) => c.kind === d.kind).map((c) => [c.id, c.name]), d.category)}</label>`}
           <label class="field"><span class="lab">${X.acct}</span>${select("r-account", list, d.account)}</label>
+          ${d.kind === "transfer" ? "" : `<label class="field"><span class="lab">${d.kind === "income" ? "Received by" : "Paid with"}</span>${select("r-method", methodChoices(), METHODS[d.method] ? d.method : methodFor(acctById(d.account)?.type, state.settings.currency))}</label>`}
           ${d.kind === "transfer" ? `<label class="field"><span class="lab">To</span>${select("r-to", list, d.to, ' aria-describedby="e-rto"')}<span class="err" id="e-rto" hidden></span></label>` : ""}
         </div>
         <label class="check"><input type="checkbox" id="r-variable"${d.variable ? " checked" : ""}><span>The amount changes each time, like an electricity bill</span></label>
@@ -2361,6 +2742,7 @@ legend { padding: 0; margin-bottom: 8px; }
           kind: d.kind, name, amount, category: d.kind === "transfer" ? "" : d.category, frequency: FREQ[d.frequency] ? d.frequency : "monthly",
           start: d.start, day: item && item.start === d.start ? item.day : Number(d.start.slice(8)), end: d.end || "",
           variable: !!d.variable, auto: !!d.auto, account: d.account, to: d.kind === "transfer" ? d.to : "", note: d.note.trim(),
+          method: d.kind === "transfer" ? "" : METHODS[d.method] ? d.method : methodFor(acctById(d.account)?.type, state.settings.currency),
         };
         if (item) {
           const r = state.recurring.find((x) => x.id === item.id);
@@ -2490,10 +2872,16 @@ legend { padding: 0; margin-bottom: 8px; }
       title: "Budgets",
       body: `<p class="sheet-intro">Set a limit for the whole month, for single categories, or both. Leave a box empty for no limit.</p>
         <label class="bfield total"><span class="min0"><b>Whole month</b><small>Everything you spend</small></span><input class="input" id="b-total" inputmode="decimal" placeholder="No limit" value="${state.settings.budget ? esc(String(state.settings.budget)) : ""}" autocomplete="off"></label>
+        <div class="bopts">
+          <label class="check"><input type="checkbox" id="b-alerts"${state.settings.alerts ? " checked" : ""}><span>Warn me when a budget reaches 50%, 80% and 100%</span></label>
+          <label class="check"><input type="checkbox" id="b-carry"${state.settings.carry ? " checked" : ""}><span>Carry unused budget into the next month<small>Only last month's leftover is added, so it doesn't pile up.</small></span></label>
+        </div>
         <div class="bfields">${cats.map((c) => `<label class="bfield"><span class="bname"><span class="ico" style="--c:${c.color}">${svg(c.icon)}</span><span class="min0"><b>${esc(c.name)}</b><small>${spent.get(c.id) ? `${esc(W(spent.get(c.id)))} spent this month` : "Nothing spent this month"}</small></span></span><input class="input" id="b-${esc(c.id)}" data-budget="${esc(c.id)}" inputmode="decimal" placeholder="No limit" value="${c.budget ? esc(String(c.budget)) : ""}" autocomplete="off" aria-label="${esc(c.name)} budget"></label>`).join("")}</div>`,
       foot: FOOT_ADD("Save budgets"),
       onSubmit() {
         state.settings.budget = parseAmount(val("b-total"));
+        state.settings.alerts = !!$("#b-alerts")?.checked;
+        state.settings.carry = !!$("#b-carry")?.checked;
         for (const el of $$("#sheet-body [data-budget]")) { const c = state.categories.find((x) => x.id === el.dataset.budget); if (c) c.budget = parseAmount(el.value); }
         commit(); toast("Budgets saved");
       },
@@ -2618,12 +3006,13 @@ legend { padding: 0; margin-bottom: 8px; }
   }
   const csvCell = (v, text) => { let s = String(v ?? ""); if (text && /^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   function toCSV() {
-    const rows = [["Date", "Type", "Description", "Category", "Amount", "Currency", "Account", "To account", "Person", "Note", "Recurring"].join(",")];
+    const rows = [["Date", "Type", "Description", "Category", "Amount", "Currency", "Account", "To account", "Method", "Person", "Pay back by", "Note", "Recurring", "Original amount", "Original currency", "Rate"].join(",")];
     const list = [...state.entries].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     for (const e of list) {
       rows.push([
         e.date, TYPES[e.type].label, csvCell(entryTitle(e), true), csvCell(e.category ? catById(e.category).name : "", true), e.amount.toFixed(2), state.settings.currency,
-        csvCell(acctName(e.account), true), csvCell(e.to ? acctName(e.to) : "", true), csvCell(e.person, true), csvCell(e.note, true), e.recurringId ? "Yes" : "",
+        csvCell(acctName(e.account), true), csvCell(e.to ? acctName(e.to) : "", true), METHODS[e.method] || "", csvCell(e.person, true), e.due || "", csvCell(e.note, true), e.recurringId ? "Yes" : "",
+        e.cur ? e.orig.toFixed(2) : "", e.cur || "", e.cur ? e.rate : "",
       ].join(","));
     }
     return rows.join("\r\n");
@@ -2737,8 +3126,8 @@ legend { padding: 0; margin-bottom: 8px; }
   setTopH();
 
   function setMonth(m) { ui.month = m; render(); }
-  function showActivity({ account = "", person = "", cat = "all", month = "" } = {}) {
-    Object.assign(ui, { actAccount: account, actPerson: person, actCat: cat, actType: "all", actQuery: "", actScope: account || person ? "all" : "month" });
+  function showActivity({ account = "", person = "", cat = "all", month = "", method = "", period = "month" } = {}) {
+    Object.assign(ui, { actAccount: account, actPerson: person, actCat: cat, actMethod: method, actType: "all", actQuery: "", actView: "list", actPeriod: account || person ? "all" : period });
     if (month) ui.month = month;
     if (location.hash === "#activity") route(); else location.hash = "activity";
   }
@@ -2746,12 +3135,13 @@ legend { padding: 0; margin-bottom: 8px; }
   function addPreset() {
     const p = {}, cur = monthOf(todayISO());
     if (ui.view === "activity") {
-      if (ui.actScope === "month" && ui.month !== cur) p.date = `${ui.month}-01`;
+      if (ui.actPeriod !== "all" && !inPeriod(ui.actPeriod, ui.anchor)) p.date = periodRange(ui.actPeriod, ui.anchor).from;
+      if (ui.actMethod) p.method = ui.actMethod;
       if (ui.actType === "people") p.type = "lent"; else if (ui.actType !== "all") p.type = ui.actType;
       if (ui.actCat !== "all") p.category = ui.actCat;
       if (ui.actAccount) p.account = ui.actAccount;
       if (ui.actPerson) { p.type = "lent"; p.person = people().find((x) => x.key === ui.actPerson)?.name || ""; }
-    } else if (ui.view === "insights" && ui.month !== cur) p.date = `${ui.month}-01`;
+    } else if (ui.view === "insights" && !inPeriod(ui.insPeriod, ui.anchor)) p.date = periodRange(ui.insPeriod, ui.anchor).from;
     return p;
   }
 
@@ -2803,13 +3193,19 @@ legend { padding: 0; margin-bottom: 8px; }
       case "month-now": setMonth(monthOf(todayISO())); break;
       case "act-type": ui.actType = k; if (k !== "all" && k !== "expense") ui.actCat = "all"; renderActivity(); break;
       case "act-cat": ui.actCat = ui.actCat === el.dataset.cat ? "all" : el.dataset.cat; if (ui.actCat !== "all" && ui.actType !== "expense") ui.actType = "all"; renderActivity(); break;
-      case "act-scope": ui.actScope = k === "all" ? "all" : "month"; renderActivity(); break;
+      case "act-period": ui.actPeriod = PERIODS[k] ? k : "month"; renderActivity(); break;
+      case "act-view": ui.actView = k === "calendar" ? "calendar" : "list"; if (ui.actView === "calendar") ui.actPeriod = "month"; renderActivity(); break;
+      case "cal-day": ui.anchor = el.dataset.d; ui.actPeriod = "day"; ui.actView = "list"; renderActivity(); break;
+      case "ins-period": ui.insPeriod = ["week", "month", "year"].includes(k) ? k : "month"; renderInsights(); break;
+      case "period-prev": case "period-next": ui.anchor = stepAnchor(el.dataset.p, ui.anchor, el.dataset.act === "period-next" ? 1 : -1); render(); break;
+      case "period-now": ui.anchor = todayISO(); render(); break;
+      case "go-method": showActivity({ method: k, period: ui.view === "insights" ? ui.insPeriod : "month" }); break;
       case "act-clear-acct": ui.actAccount = ""; renderActivity(); break;
       case "act-clear-person": ui.actPerson = ""; renderActivity(); break;
-      case "clear-filters": Object.assign(ui, { actType: "all", actCat: "all", actQuery: "", actAccount: "", actPerson: "" }); renderActivity(); break;
+      case "clear-filters": Object.assign(ui, { actType: "all", actCat: "all", actQuery: "", actAccount: "", actPerson: "", actMethod: "" }); renderActivity(); break;
       case "rec-filter": ui.recFilter = el.dataset.f; renderRecurring(); break;
       case "clear-rec-filters": ui.recFilter = "all"; ui.recQuery = ""; renderRecurring(); break;
-      case "go-cat": showActivity({ cat: el.dataset.cat, month: ui.view === "home" ? monthOf(todayISO()) : ui.month }); break;
+      case "go-cat": showActivity({ cat: el.dataset.cat, month: ui.view === "home" ? monthOf(todayISO()) : "", period: ui.view === "insights" ? ui.insPeriod : "month" }); break;
       case "row-prev": case "row-next": {
         const tr = el.parentElement.querySelector(".row-track");
         tr.scrollBy({ left: (el.dataset.act === "row-next" ? 1 : -1) * tr.clientWidth * 0.82, behavior: reduced ? "auto" : "smooth" });
@@ -2835,6 +3231,7 @@ legend { padding: 0; margin-bottom: 8px; }
   });
   document.addEventListener("change", (e) => {
     if (e.target.id === "act-sort") { ui.actSort = e.target.value; renderActList(); }
+    else if (e.target.id === "act-method") { ui.actMethod = e.target.value; renderActivity(); }
     else if (e.target.id === "rec-sort") { ui.recSort = e.target.value; renderRecList(); }
   });
   document.addEventListener("keydown", (e) => {

@@ -6,11 +6,13 @@
   unsynced = !!(saved && saved._unsynced);
 
   const ui = {
-    view: "home", month: monthOf(todayISO()),
-    actQuery: "", actType: "all", actCat: "all", actAccount: "", actPerson: "", actScope: "month", actSort: "new",
+    view: "home", anchor: todayISO(), insPeriod: "month",
+    actQuery: "", actType: "all", actCat: "all", actAccount: "", actPerson: "", actPeriod: "month", actView: "list", actMethod: "", actSort: "new",
     recQuery: "", recFilter: "all", recSort: "due",
     bannerHidden: false, lastCat: {}, lastAccount: "",
   };
+
+  Object.defineProperty(ui, "month", { get: () => monthOf(ui.anchor), set: (m) => { ui.anchor = dayInMonth(m, Number(ui.anchor.slice(8))); } });
 
   function commit() {
     unsynced = true;

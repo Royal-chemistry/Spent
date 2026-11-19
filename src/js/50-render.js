@@ -76,8 +76,11 @@
     let note;
     if (left <= 0) note = "Reached. Nicely done.";
     else if (a.deadline && a.deadline < t) note = `${W(left)} to go. The date you set has passed.`;
-    else if (a.deadline) note = `${W(left / Math.max(1, monthDiff(monthOf(t), monthOf(a.deadline))))} a month gets you there by ${fMonth(monthOf(a.deadline))}`;
-    else note = `${W(left)} to go`;
+    else if (a.deadline) {
+      const perDay = left / Math.max(1, daysBetween(t, a.deadline));
+      note = `${W(left / Math.max(1, monthDiff(monthOf(t), monthOf(a.deadline))))} a month, or ${money(perDay, { whole: perDay >= 10 })} a day, gets you there by ${fMonth(monthOf(a.deadline))}`;
+    }
+    else note = `${W(left)} to go. Add a target date to see what to put aside each month.`;
     return `<div class="goal"><button type="button" class="goal-main" data-act="edit-acct" data-id="${esc(a.id)}" aria-label="${esc(`${a.name}: ${W(b)} of ${W(a.target)} saved. Edit`)}">
       <span class="goal-head"><span class="ico" style="--c:${acctColor(a)}">${svg("target")}</span><span class="goal-name">${esc(a.name)}</span><span class="mono">${Math.round(pct)}%</span></span>
       <span class="goal-amt">${esc(W(b))} <small>of ${esc(W(a.target))}</small></span>
@@ -86,12 +89,28 @@
       <button type="button" class="btn small" data-act="fund" data-id="${esc(a.id)}">${svg("plus")}Add money</button></div>`;
   }
 
+  function debtCard(p, st) {
+    const owed = p.balance > 0, text = owed ? `${p.name} owes you` : `You owe ${p.name}`;
+    return `<div class="bill-wrap lift"><button type="button" class="poster bill" style="--c:#6D28D9" data-act="person" data-k="${esc(p.key)}" aria-label="${esc(`${text} ${money(Math.abs(p.balance))}, ${debtText(st)}. Show history`)}">${art({ icon: "person" })}
+      <span class="bill-top"><span class="pill ${st.overdue ? "overdue" : "soon"}">${esc(debtText(st))}</span><span class="mono">${esc(fDate(p.due))}</span></span>
+      <span class="poster-kicker">${owed ? "Lent · paying you back" : "Borrowed · to pay back"}</span>
+      <span class="poster-title">${esc(text)}</span>
+      <span class="p-amt">${esc(money(Math.abs(p.balance)))}</span></button>
+      <button type="button" class="pay-btn" data-act="settle" data-k="${esc(p.key)}" aria-label="${esc(`Settle up with ${p.name}`)}">${svg("check")}Settle</button></div>`;
+  }
+  function budgetAlerts(m) {
+    if (!state.settings.alerts) return "";
+    const list = budgetStatus(m).filter((b) => b.level >= 50).sort((a, b) => b.pct - a.pct);
+    if (!list.length) return "";
+    return `<div class="alerts" role="list" aria-label="Budget alerts">${list.map((b) => `<button type="button" role="listitem" class="alert-chip lvl-${b.level}" data-act="${b.id ? "go-cat" : "budgets"}"${b.id ? ` data-cat="${esc(b.id)}"` : ""}>${svg(b.level >= 100 ? "alert" : "bell")}<span><b>${esc(b.name)}</b> ${b.level >= 100 ? `over by ${esc(W(b.spent - b.total))}` : `${Math.floor(b.pct)}% used, ${esc(W(b.total - b.spent))} left`}</span></button>`).join("")}</div>`;
+  }
+
   /* ---------- home ---------- */
   function renderHome() {
     const t = todayISO(), m = monthOf(t), days = daysInMonth(m), day = Number(t.slice(8));
     const list = entriesIn(m);
     const { spent, income, net } = totals(list);
-    const budget = state.settings.budget;
+    const B = budgetFor(m), budget = B.total;
     const bills = billsIn(m, t);
     const cats = catTotals(list);
     const hue = cats[0] ? catById(cats[0].id).color : "";
@@ -111,7 +130,7 @@
       const pacePct = Math.min(100, (paceAmt / budget) * 100);
       if (left >= 0) {
         const perDay = Math.max(0, left - bills.unpaid) / daysLeft;
-        sub = `of your <b>${esc(W(budget))}</b> budget. <b>${esc(W(left))}</b> left` + (bills.unpaid > 0
+        sub = `of your <b>${esc(W(budget))}</b> budget${B.carry ? `, which includes ${esc(W(B.carry))} carried over from ${esc(fMonthName(addMonths(m, -1)))}` : ""}. <b>${esc(W(left))}</b> left` + (bills.unpaid > 0
           ? `, with ${esc(W(bills.unpaid))} of bills still to pay. That leaves about <b>${esc(W(perDay))} a day</b> for the next ${plural(daysLeft, "day")}.`
           : `. That's about <b>${esc(W(perDay))} a day</b> for the next ${plural(daysLeft, "day")}.`);
       } else {
@@ -130,9 +149,28 @@
     const budgetBtn = budget > 0 ? "" : `<button type="button" class="btn-ghost" data-act="budgets">${svg("target")}<span>Set a budget</span></button>`;
     const amount = W(Math.max(0, spent));
 
+    // Today at a glance
+    const todayList = state.entries.filter((e) => e.date === t);
+    const todaySpent = Math.max(0, totals(todayList).spent), nToday = todayList.filter((e) => e.type === "expense").length;
+    const streak = noSpendStreak(), liq = liquidity(bal);
+    const goalTarget = sum(goals.map((a) => a.target)), goalSaved = sum(goals.map((a) => bal.get(a.id) || 0));
+    const left = round2(budget - spent), perDay = Math.max(0, left - bills.unpaid) / daysLeft;
+    const glance = `<section class="wrap home-kpis" aria-label="Today at a glance"><div class="kpis">
+        ${kpi("Spent today", W(todaySpent), nToday ? plural(nToday, "expense") : streak > 1 ? `No-spend streak: ${plural(streak, "day")}` : "Nothing yet today")}
+        ${kpi("Available now", signed(liq.available, { whole: true }), liq.cardOwed > 0 ? `${W(liq.cardOwed)} owed on cards` : "Cash, bank and wallets", liq.available < 0 ? "bad" : "")}
+        ${kpi("Total savings", W(liq.saved), goalTarget > 0 ? `${Math.round((goalSaved / goalTarget) * 100)}% of your goal targets` : "Savings, investments and goals")}
+        ${budget > 0 ? kpi("Budget left", left >= 0 ? W(left) : `−${W(-left)}`, left >= 0 ? `${W(perDay)} a day for ${plural(daysLeft, "day")}` : "You're over budget", left < 0 ? "bad" : spent / budget >= 0.8 ? "warn" : "") : kpi("Budget left", "No budget", "Set one under Budgets")}
+      </div>${budgetAlerts(m)}</section>`;
+
+    // Bills and debts that are due, soonest first
+    const dueDebts = people().map((p) => ({ p, st: debtStatus(p) })).filter((x) => x.st && (x.st.overdue || x.st.soon));
+    const upcomingCards = [...dueDebts.map((x) => ({ due: x.p.due, html: debtCard(x.p, x.st) })), ...up.slice(0, 14).map(({ r, st }) => ({ due: st.due, html: billCard(r, st) }))].sort((a, b) => a.due.localeCompare(b.due));
+    const months6 = Array.from({ length: 6 }, (_, i) => addMonths(m, i - 5)), mt = months6.map((mm) => totals(entriesIn(mm)));
+
     const rows = [];
-    rows.push(row("Up next", "#recurring", "All recurring", up.length ? up.slice(0, 14).map(({ r, st }) => billCard(r, st)).join("") : emptyTile("Add rent, subscriptions, bills and your salary, and you'll see what's coming up.", "add-rec", "Add recurring")));
+    rows.push(row("Up next", "#recurring", "All recurring", upcomingCards.length ? upcomingCards.map((x) => x.html).join("") : emptyTile("Add rent, subscriptions, bills and your salary, and you'll see what's coming up.", "add-rec", "Add recurring")));
     if (accts.length) rows.push(row("Your money", "#wallet", "Wallet", accts.map((a) => acctCard(a, bal.get(a.id) || 0)).join("")));
+    if (mt.some((x) => x.income > 0 || x.spent > 0)) rows.push(`<section class="row"><div class="wrap row-head"><h2>In and out</h2><a class="see-all" href="#insights">Insights${svg("right")}</a></div><div class="wrap"><div class="card home-chart">${flowChart(months6, mt)}</div></div></section>`);
     const top = list.filter((e) => e.type === "expense").sort((a, b) => b.amount - a.amount).slice(0, 5);
     if (top.length) rows.push(row(`Top ${top.length} in ${fMonthName(m)}`, "#activity", "All activity", top.map((e, i) => topCard(e, i + 1)).join("")));
     const recent = [...state.entries].sort(byNewest).slice(0, 12);
@@ -152,6 +190,7 @@
           <div class="bb-actions"><button type="button" class="btn-play" data-act="add-entry">${svg("plus")}Add entry</button>${nextBtn}${budgetBtn}</div>
         </div></div>
       </section>
+      ${glance}
       <div class="rows">${rows.join("")}</div>`;
     bindRows();
   }
@@ -169,17 +208,28 @@
     });
   }
 
-  function monthNav() {
-    const cur = monthOf(todayISO());
-    const canNext = ui.month < addMonths(cur, 12);
-    return `<div class="month-nav"><button type="button" class="icon-btn" data-act="month-prev" aria-label="Previous month">${svg("left")}</button>${ui.month !== cur ? `<button type="button" class="btn small" data-act="month-now">This month</button>` : ""}<button type="button" class="icon-btn" data-act="month-next" aria-label="Next month"${canNext ? "" : " disabled"}>${svg("right")}</button></div>`;
+  /* Previous, next and back-to-now for whichever period a view shows. */
+  function periodNav(period) {
+    const t = todayISO();
+    const nextFrom = periodRange(period, stepAnchor(period, ui.anchor, 1)).from;
+    const canNext = nextFrom <= `${addMonths(monthOf(t), 12)}-01`;
+    const now = { day: "Today", week: "This week", month: "This month", year: "This year" }[period];
+    const word = PERIOD_WORD[period];
+    return `<div class="month-nav"><button type="button" class="icon-btn" data-act="period-prev" data-p="${period}" aria-label="Previous ${word}">${svg("left")}</button>${inPeriod(period, ui.anchor) ? "" : `<button type="button" class="btn small" data-act="period-now">${now}</button>`}<button type="button" class="icon-btn" data-act="period-next" data-p="${period}" aria-label="Next ${word}"${canNext ? "" : " disabled"}>${svg("right")}</button></div>`;
   }
+  const methodChoices = () => Object.entries(METHODS).filter(([k]) => k !== "upi" || state.settings.currency === "INR" || state.entries.some((e) => e.method === "upi"));
 
   /* ---------- activity ---------- */
+  function periodEntries(period) {
+    if (period === "all") return state.entries;
+    const r = periodRange(period, ui.anchor);
+    return entriesBetween(r.from, r.to);
+  }
   function activityList() {
-    let list = ui.actScope === "all" ? state.entries : entriesIn(ui.month);
+    let list = periodEntries(ui.actPeriod);
     if (ui.actAccount) list = list.filter((e) => e.account === ui.actAccount || e.to === ui.actAccount);
     if (ui.actPerson) list = list.filter((e) => personKey(e.person) === ui.actPerson);
+    if (ui.actMethod) list = list.filter((e) => e.method === ui.actMethod);
     const ty = ui.actType;
     if (ty === "expense") list = list.filter((e) => e.type === "expense" || e.type === "refund");
     else if (ty === "people") list = list.filter((e) => TYPES[e.type].person);
@@ -190,21 +240,27 @@
     return list;
   }
   function renderActivity() {
-    const all = ui.actScope === "all";
-    const cats = catTotals(all ? state.entries : entriesIn(ui.month)).slice(0, 8).map((c) => c.id);
+    const p = ui.actPeriod, all = p === "all", cal = ui.actView === "calendar" && p === "month";
+    const cats = catTotals(periodEntries(p)).slice(0, 8).map((c) => c.id);
     if (ui.actCat !== "all" && !cats.includes(ui.actCat)) cats.unshift(ui.actCat);
     const tchip = (k, label) => `<button type="button" class="chip" data-act="act-type" data-k="${k}" aria-pressed="${ui.actType === k}">${label}</button>`;
     const cchip = (id) => { const c = catById(id); return `<button type="button" class="chip" data-act="act-cat" data-cat="${esc(id)}" aria-pressed="${ui.actCat === id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`; };
     const pinned = [];
     if (ui.actAccount) pinned.push(`<button type="button" class="chip" data-act="act-clear-acct" aria-pressed="true" aria-label="${esc(`Showing ${acctName(ui.actAccount)} only. Show every account`)}">${esc(acctName(ui.actAccount))}${svg("x")}</button>`);
-    if (ui.actPerson) { const name = people().find((p) => p.key === ui.actPerson)?.name || ui.actPerson; pinned.push(`<button type="button" class="chip" data-act="act-clear-person" aria-pressed="true" aria-label="${esc(`Showing ${name} only. Show everyone`)}">${esc(name)}${svg("x")}</button>`); }
+    if (ui.actPerson) { const name = people().find((x) => x.key === ui.actPerson)?.name || ui.actPerson; pinned.push(`<button type="button" class="chip" data-act="act-clear-person" aria-pressed="true" aria-label="${esc(`Showing ${name} only. Show everyone`)}">${esc(name)}${svg("x")}</button>`); }
+    const seg = (k, label, cur, act) => `<button type="button" data-act="${act}" data-k="${k}" aria-pressed="${cur === k}">${label}</button>`;
+    const searchWhat = all ? "everything" : p === "month" ? fMonthName(monthOf(ui.anchor)) : `this ${PERIOD_WORD[p]}`;
     $("#view-activity").innerHTML = `<div class="wrap view-body">
-      <header class="view-head"><div><p class="eyebrow">Activity</p><h1 class="large-title">${all ? "All time" : esc(fMonth(ui.month))}</h1><p class="view-sub" id="act-summary"></p></div>${all ? "" : monthNav()}</header>
+      <header class="view-head"><div><p class="eyebrow">Activity</p><h1 class="large-title">${esc(periodLabel(p, ui.anchor))}</h1><p class="view-sub" id="act-summary"></p></div>${all ? "" : periodNav(p)}</header>
       <div class="toolbar">
-        <label class="search"><span class="sr">Search entries</span>${svg("search")}<input id="act-search" type="search" placeholder="Search ${all ? "everything" : esc(fMonthName(ui.month))}" value="${esc(ui.actQuery)}" autocomplete="off"></label>
-        <div class="seg" role="group" aria-label="Period"><button type="button" data-act="act-scope" data-k="month" aria-pressed="${!all}">Month</button><button type="button" data-act="act-scope" data-k="all" aria-pressed="${all}">All time</button></div>
-        <label class="select-wrap"><span class="sr">Sort entries</span><select id="act-sort" class="select">${opts([["new", "Newest first"], ["old", "Oldest first"], ["high", "Highest amount"], ["low", "Lowest amount"]], ui.actSort)}</select>${svg("down")}</label>
+        <label class="search"><span class="sr">Search entries</span>${svg("search")}<input id="act-search" type="search" placeholder="Search ${esc(searchWhat)}" value="${esc(ui.actQuery)}" autocomplete="off"></label>
         <button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button>
+      </div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Period">${Object.entries(PERIODS).map(([k, l]) => seg(k, l, p, "act-period")).join("")}</div>
+        <div class="seg" role="group" aria-label="Show as">${seg("list", "List", cal ? "calendar" : "list", "act-view")}${seg("calendar", `${svg("calendar")}Calendar`, cal ? "calendar" : "list", "act-view")}</div>
+        <label class="select-wrap"><span class="sr">Payment method</span><select id="act-method" class="select">${opts([["", "Every method"], ...methodChoices()], ui.actMethod)}</select>${svg("down")}</label>
+        ${cal ? "" : `<label class="select-wrap"><span class="sr">Sort entries</span><select id="act-sort" class="select">${opts([["new", "Newest first"], ["old", "Oldest first"], ["high", "Highest amount"], ["low", "Lowest amount"]], ui.actSort)}</select>${svg("down")}</label>`}
       </div>
       <div class="chips" role="group" aria-label="Filter entries">${pinned.join("")}${tchip("all", "All")}${tchip("expense", "Spending")}${tchip("income", "Income")}${tchip("transfer", "Transfers")}${tchip("people", "People")}${cats.length ? `<span class="chip-sep" aria-hidden="true"></span>${cats.map(cchip).join("")}` : ""}</div>
       <div id="act-list" class="exp-list"></div></div>`;
@@ -212,11 +268,11 @@
   }
   function itemRow(e, withDate) {
     const v = entryVisual(e), a = entryAmount(e);
-    return `<button type="button" class="item" data-act="edit-entry" data-id="${esc(e.id)}"><span class="ico" style="--c:${v.color}">${svg(v.icon)}</span><span class="min0"><span class="item-title">${esc(entryTitle(e))}</span><span class="item-meta">${entryMeta(e, withDate)}</span></span><span class="item-amt ${a.cls}">${esc(a.text)}</span></button>`;
+    return `<button type="button" class="item" data-act="edit-entry" data-id="${esc(e.id)}"><span class="ico" style="--c:${v.color}">${svg(v.icon)}</span><span class="min0"><span class="item-title">${esc(entryTitle(e))}</span><span class="item-meta">${entryMeta(e, withDate)}</span></span><span class="item-amt ${a.cls}">${esc(a.text)}${e.cur ? `<small>${esc(fmtCur(e.orig, e.cur))}</small>` : ""}</span></button>`;
   }
   function renderActList() {
     const el = $("#act-list"); if (!el) return;
-    const all = ui.actScope === "all";
+    const p = ui.actPeriod, all = p === "all";
     const found = activityList();
     const tt = totals(found);
     const bits = [];
@@ -224,13 +280,15 @@
     if (tt.income > 0) bits.push(`<b>${esc(money(tt.income))}</b> came in`);
     bits.push(plural(found.length, "entry", "entries"));
     $("#act-summary").innerHTML = found.length ? bits.join(" · ") : "";
-    const filtered = ui.actType !== "all" || ui.actCat !== "all" || ui.actQuery.trim() || ui.actAccount || ui.actPerson;
+    if (ui.actView === "calendar" && p === "month") { el.innerHTML = calendarHTML(monthOf(ui.anchor), found); return; }
+    const filtered = ui.actType !== "all" || ui.actCat !== "all" || ui.actQuery.trim() || ui.actAccount || ui.actPerson || ui.actMethod;
+    const where = all ? "" : p === "day" ? ` on ${fDateLong(ui.anchor)}` : p === "month" ? ` in ${fMonthName(monthOf(ui.anchor))}` : ` this ${PERIOD_WORD[p]}`;
     if (!found.length && !filtered) {
-      el.innerHTML = `<div class="empty"><h3>${all ? "Nothing logged yet" : `Nothing logged in ${esc(fMonthName(ui.month))}`}</h3><p>Add what you spend, earn, move or lend as you go, and it lands here grouped by day.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
+      el.innerHTML = `<div class="empty"><h3>${all ? "Nothing logged yet" : `Nothing logged${esc(where)}`}</h3><p>Add what you spend, earn, move or lend as you go, and it lands here grouped by day.</p><button type="button" class="btn primary" data-act="add-entry">${svg("plus")}Add entry</button></div>`;
       return;
     }
     if (!found.length) {
-      el.innerHTML = `<div class="empty"><h3>No matches</h3><p>Nothing ${all ? "you've logged" : `in ${esc(fMonthName(ui.month))}`} matches your search or filters.</p><button type="button" class="btn" data-act="clear-filters">Clear search and filters</button></div>`;
+      el.innerHTML = `<div class="empty"><h3>No matches</h3><p>Nothing${all ? " you've logged" : esc(where)} matches your search or filters.</p><button type="button" class="btn" data-act="clear-filters">Clear search and filters</button></div>`;
       return;
     }
     const CAP = 400;
@@ -245,12 +303,43 @@
     list = list.slice(0, CAP);
     const groups = [];
     for (const e of list) { const g = groups[groups.length - 1]; if (g && g.date === e.date) g.items.push(e); else groups.push({ date: e.date, items: [e] }); }
+    const longDates = p === "all" || p === "year";
     el.innerHTML = groups.map((g) => {
       const d = totals(g.items);
       const right = [d.income > 0 ? "+" + money(d.income) : "", d.spent > 0 ? money(d.spent) : ""].filter(Boolean).join(" · ");
-      const label = relDay(g.date) === fDate(g.date) ? (all ? fDateLong(g.date) : fDay(g.date)) : `${relDay(g.date)} · ${fDay(g.date)}`;
+      const label = relDay(g.date) === fDate(g.date) ? (longDates ? fDateLong(g.date) : fDay(g.date)) : `${relDay(g.date)} · ${fDay(g.date)}`;
       return `<section class="day"><div class="day-head"><span>${esc(label)}</span><span>${esc(right)}</span></div><div class="list">${g.items.map((e) => itemRow(e, false)).join("")}</div></section>`;
     }).join("") + more;
+  }
+  /* A month as a calendar: what went out each day, with no-spend days marked. Recurring bills don't break a no-spend day. */
+  function calendarHTML(m, found) {
+    const days = daysInMonth(m), t = todayISO(), first = firstEntryDate();
+    const lead = (parseISO(`${m}-01`).getDay() + 6) % 7;
+    const spent = new Map(), count = new Map(), income = new Map(), disc = new Set();
+    for (const e of found) {
+      spent.set(e.date, (spent.get(e.date) || 0) + spendOf(e));
+      if (e.type === "expense") count.set(e.date, (count.get(e.date) || 0) + 1);
+      if (e.type === "income") income.set(e.date, (income.get(e.date) || 0) + e.amount);
+    }
+    for (const e of entriesIn(m)) if (e.type === "expense" && !e.recurringId) disc.add(e.date);
+    const max = Math.max(0, ...spent.values());
+    const monday = weekStart(t);
+    const heads = Array.from({ length: 7 }, (_, i) => `<span class="cal-h" aria-hidden="true">${esc(DF.wd.format(parseISO(addDays(monday, i))))}</span>`).join("");
+    let cells = "";
+    for (let i = 0; i < lead; i++) cells += `<span class="cal-pad" aria-hidden="true"></span>`;
+    for (let d = 1; d <= days; d++) {
+      const date = `${m}-${pad(d)}`, sp = Math.max(0, round2(spent.get(date) || 0)), n = count.get(date) || 0, inc = income.get(date) || 0;
+      const future = date > t, tracked = first && date >= first;
+      const free = !future && tracked && !disc.has(date);
+      const heat = max > 0 ? Math.round((sp / max) * 34) : 0;
+      const label = `${fDay(date)}: ${sp > 0 ? `spent ${money(sp)} across ${plural(n, "entry", "entries")}` : future ? "still to come" : free ? "no spending" : "nothing spent"}${inc > 0 ? `, ${money(inc)} came in` : ""}`;
+      cells += `<button type="button" class="cal-day${date === t ? " today" : ""}${future ? " future" : ""}${free ? " free" : ""}" style="--heat:${heat}%" data-act="cal-day" data-d="${date}" aria-label="${esc(label)}">
+        <span class="cal-n">${d}</span>${sp > 0 ? `<span class="cal-amt">${esc(compact(sp))}</span>` : free ? `<span class="cal-free">${svg("check")}<span>No spend</span></span>` : ""}${inc > 0 ? `<span class="cal-in">+${esc(compact(inc))}</span>` : ""}</button>`;
+    }
+    const ns = noSpendStats(`${m}-01`, `${m}-${pad(days)}`);
+    const streak = inPeriod("month", `${m}-01`) ? noSpendStreak() : 0;
+    const stats = ns.counted ? `<div class="cal-stats"><span><b>${ns.count}</b> no-spend ${ns.count === 1 ? "day" : "days"} out of ${ns.counted}</span><span>Longest run <b>${plural(ns.longest, "day")}</b></span>${streak ? `<span>Current streak <b>${plural(streak, "day")}</b></span>` : ""}<span class="hint">Recurring bills don't count as spending here.</span></div>` : "";
+    return `${stats}<div class="cal" role="group" aria-label="${esc(`${fMonth(m)} calendar. Pick a day to see its entries.`)}">${heads}${cells}</div>`;
   }
 
   /* ---------- recurring ---------- */
@@ -262,6 +351,11 @@
     const perMonth = (kind) => round2(active.filter((x) => x.r.kind === kind && x.st).reduce((n, x) => n + x.r.amount * FREQ[x.r.frequency].perMonth, 0));
     const out = perMonth("expense"), inc = perMonth("income");
     const paused = rows.length - active.length;
+    const subs = subscriptions();
+    const subsCard = subs.list.length ? `<section class="card subs" aria-label="Subscriptions">
+        <div class="card-head split"><div><h3>Subscriptions</h3><p><b>${esc(W(subs.monthly))}</b> a month · ${esc(W(subs.yearly))} a year · ${plural(subs.list.length, "active subscription")}</p></div><button type="button" class="btn small" data-act="rec-filter" data-f="subs">Show only these</button></div>
+        <div class="subs-list">${subs.list.map(({ r, st, monthly }) => `<button type="button" class="sub-chip" data-act="edit-rec" data-id="${esc(r.id)}"><span class="sub-name">${esc(r.name)}</span><span class="sub-amt">${esc(money(monthly))}<small>/mo</small></span><span class="sub-next">Next ${esc(fDate(st.due))}${r.frequency !== "monthly" ? ` · ${esc(FREQ[r.frequency].label.toLowerCase())}` : ""}</span></button>`).join("")}</div>
+      </section>` : "";
     const seg = (k, label, n) => `<button type="button" data-act="rec-filter" data-f="${k}" aria-pressed="${ui.recFilter === k}">${esc(label)}<span class="count">${n}</span></button>`;
     $("#view-recurring").innerHTML = `<div class="wrap view-body">
       <header class="view-head"><div><p class="eyebrow">Recurring</p><h1 class="large-title">Bills and regulars</h1><p class="view-sub">Rent, subscriptions, salary, savings and anything else that comes round again. Deal with one and it lands in your activity.</p></div>
@@ -272,9 +366,10 @@
         ${kpi("Overdue", String(overdue.length), overdue.length ? W(sum(overdue.map((x) => x.r.amount))) : "Nothing late", overdue.length ? "bad" : "")}
         ${kpi("Due in 7 days", String(soon.length), soon.length ? W(sum(soon.map((x) => x.r.amount))) : "Nothing this week", soon.length ? "warn" : "")}
       </div>
+      ${subsCard}
       <div class="toolbar">
         <label class="search"><span class="sr">Search recurring items</span>${svg("search")}<input id="rec-search" type="search" placeholder="Search recurring" value="${esc(ui.recQuery)}" autocomplete="off"></label>
-        <div class="seg" role="group" aria-label="Show">${seg("all", "All", rows.length)}${seg("overdue", "Overdue", overdue.length)}${seg("soon", "Due in 7 days", soon.length)}${seg("paused", "Paused", paused)}</div>
+        <div class="seg" role="group" aria-label="Show">${seg("all", "All", rows.length)}${seg("overdue", "Overdue", overdue.length)}${seg("soon", "Due in 7 days", soon.length)}${seg("subs", "Subscriptions", subs.list.length)}${seg("paused", "Paused", paused)}</div>
         <label class="select-wrap"><span class="sr">Sort recurring items</span><select id="rec-sort" class="select">${opts([["due", "Next due"], ["amount", "Amount"], ["name", "Name"], ["status", "Status"]], ui.recSort)}</select>${svg("down")}</label>
       </div>
       <div id="rec-list"></div></div>`;
@@ -287,6 +382,7 @@
     let rows = all;
     const f = ui.recFilter;
     if (f === "paused") rows = rows.filter((x) => x.r.active === false);
+    else if (f === "subs") rows = rows.filter((x) => isSubscription(x.r));
     else if (f !== "all") rows = rows.filter((x) => x.r.active !== false && x.st && (f === "overdue" ? x.st.overdue : x.st.soon));
     const q = ui.recQuery.trim().toLowerCase();
     if (q) rows = rows.filter((x) => `${x.r.name} ${x.r.category ? catById(x.r.category, x.r.kind).name : ""} ${RKIND[x.r.kind].label} ${x.r.note}`.toLowerCase().includes(q));
@@ -330,7 +426,8 @@
       const tone = p.balance > 0 ? "in" : p.balance < 0 ? "warn" : "";
       const text = p.balance > 0 ? `Owes you ${money(p.balance)}` : p.balance < 0 ? `You owe ${money(-p.balance)}` : "Settled up";
       const initials = p.name.trim().split(/\s+/).slice(0, 2).map((w) => [...w][0]).join("").toUpperCase();
-      return `<div class="prow"><button type="button" class="pmain" data-act="person" data-k="${esc(p.key)}" aria-label="${esc(`${p.name}. ${text}. Show history`)}"><span class="avatar" aria-hidden="true">${esc(initials)}</span><span class="min0"><span class="item-title">${esc(p.name)}</span><span class="item-meta">${plural(p.count, "entry", "entries")} · last ${esc(fDate(p.last))}</span></span></button><span class="p-bal ${tone}">${esc(text)}</span>${p.balance ? `<button type="button" class="btn small" data-act="settle" data-k="${esc(p.key)}">Settle up</button>` : ""}</div>`;
+      const ds = debtStatus(p), dueText = ds ? debtText(ds) || `Due ${fDate(p.due)}` : "";
+      return `<div class="prow"><button type="button" class="pmain" data-act="person" data-k="${esc(p.key)}" aria-label="${esc(`${p.name}. ${text}${dueText ? `. ${dueText}` : ""}. Show history`)}"><span class="avatar" aria-hidden="true">${esc(initials)}</span><span class="min0"><span class="item-title">${esc(p.name)}</span><span class="item-meta">${plural(p.count, "entry", "entries")} · last ${esc(fDate(p.last))}</span></span></button>${dueText ? `<span class="pill ${ds.overdue ? "overdue" : ds.soon ? "soon" : "paused"}">${esc(dueText)}</span>` : ""}<span class="p-bal ${tone}">${esc(text)}</span>${p.balance ? `<button type="button" class="btn small" data-act="settle" data-k="${esc(p.key)}">Settle up</button>` : ""}</div>`;
     };
     $("#view-wallet").innerHTML = `<div class="wrap view-body">
       <header class="view-head"><div><p class="eyebrow">Wallet · Net worth</p><h1 class="large-title">${esc(signed(wo.net))}</h1><p class="view-sub">Everything in your accounts and goals, plus what you're owed, minus what you owe.</p></div></header>

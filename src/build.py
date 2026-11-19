@@ -9,7 +9,7 @@ src = pathlib.Path(__file__).resolve().parent
 root = src.parent
 read = lambda p: (src / p).read_text()
 
-css = read('css/base.css') + read('css/v2.css')
+css = read('css/base.css') + read('css/v2.css') + read('css/v3.css')
 js = ''.join(read(f'js/{f.name}') for f in sorted((src / 'js').glob('*.js')))
 style = '<style>\n' + css + '</style>\n'
 themes = '<script>\n' + read('themes.js') + '</script>\n'

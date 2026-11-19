@@ -95,6 +95,8 @@
     push(addDays(t, -6), "borrowed", "", "", 25, "cash", { person: "Priya", note: "Lunch, I forgot my card" });
     push(addDays(t, -40), "lent", "", "", 60, "bank", { person: "Alex" });
     push(addDays(t, -31), "collected", "", "", 60, "bank", { person: "Alex" });
+    // In India most everyday spending goes out by UPI from a bank account rather than on a card.
+    if (currency === "INR") for (const e of s.entries) if (e.account === "card" && e.type === "expense" && !e.recurringId && rng() < 0.6) { e.account = "bank"; e.method = "upi"; }
     // Pay off each month's card spending on the 5th of the next month.
     for (let i = 4; i >= 0; i--) {
       const m = addMonths(cur, -i), date = `${m}-05`;
@@ -104,5 +106,7 @@
       if (due > 0) s.entries.push({ id: uid(), type: "transfer", title: "Card payment", amount: due, category: "", date, account: "bank", to: "card", person: "", note: "", recurringId: null });
     }
     s.recurring = R;
-    return s;
+    for (const e of s.entries) if (e.type === "lent" && e.person === "Sam") e.due = addDays(t, 4);
+    for (const e of s.entries) if (e.type === "borrowed" && e.person === "Priya") e.due = addDays(t, 9);
+    return normalize(s);
   }

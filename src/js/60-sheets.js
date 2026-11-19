@@ -38,8 +38,9 @@
   /* ---------- an entry of any type ---------- */
   function entryForm(item = null, preset = {}) {
     const d = item
-      ? { type: item.type, amount: String(item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note }
-      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", title: "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "" };
+      ? { type: item.type, amount: String(item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note, method: item.method, due: item.due }
+      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", title: preset.title || "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "", method: preset.method || "", due: "" };
+    let methodTouched = !!(item || preset.method);
     const pool = () => state.accounts.filter((a) => !a.archived || a.id === d.account || a.id === d.to);
     const fix = () => { // keep the draft valid for its type
       const T = TYPES[d.type], list = pool();
@@ -48,10 +49,11 @@
         d.category = (state.categories.find((c) => c.id === ui.lastCat[T.cat] && c.kind === T.cat) || state.categories.find((c) => c.kind === T.cat)).id;
       }
       if (d.type === "transfer" && (d.to === d.account || !list.some((a) => a.id === d.to))) d.to = (list.find((a) => a.id !== d.account) || {}).id || "";
+      if (d.type !== "transfer" && (!methodTouched || !METHODS[d.method])) d.method = methodFor(acctById(d.account)?.type, state.settings.currency);
     };
     const read = () => { // pull what's been typed back into the draft
       const get = (id, key) => { const el = document.getElementById(id); if (el) d[key] = el.value; };
-      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person");
+      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person"); get("f-method", "method"); get("f-due", "due");
       const c = $("#sheet-card input[name=category]:checked");
       if (c) d.category = c.value;
     };
@@ -65,8 +67,9 @@
         ${T.cat ? categoryPicker(d.category, T.cat) : ""}
         <div class="grid2">
           <label class="field"><span class="lab">${T.verb}</span>${select("f-account", list, d.account)}</label>
-          ${d.type === "transfer" ? `<label class="field"><span class="lab">To</span>${select("f-to", list, d.to, ' aria-describedby="e-to"')}<span class="err" id="e-to" hidden></span></label>` : ""}
+          ${d.type === "transfer" ? `<label class="field"><span class="lab">To</span>${select("f-to", list, d.to, ' aria-describedby="e-to"')}<span class="err" id="e-to" hidden></span></label>` : `<label class="field"><span class="lab">${IN_TYPES.has(d.type) ? "Received by" : "Paid with"}</span>${select("f-method", methodChoices(), d.method)}</label>`}
           <label class="field"><span class="lab">Date</span><input class="input" type="date" id="f-date" value="${esc(d.date)}" aria-describedby="e-date"><span class="err" id="e-date" hidden></span></label>
+          ${d.type === "lent" || d.type === "borrowed" ? `<label class="field"><span class="lab">${d.type === "lent" ? "They'll pay back by" : "You'll pay back by"} <span class="opt-lab">(optional)</span></span><input class="input" type="date" id="f-due" value="${esc(d.due)}" aria-describedby="e-due"><span class="err" id="e-due" hidden></span></label>` : ""}
           <label class="field"><span class="lab">Note <span class="opt-lab">(optional)</span></span><input class="input" id="f-note" maxlength="140" value="${esc(d.note)}" autocomplete="off"></label>
         </div>
         ${item?.recurringId && state.recurring.some((r) => r.id === item.recurringId) ? `<p class="hint">This entry belongs to a recurring item. Deleting it marks that cycle as not done.</p>` : ""}`;
@@ -94,20 +97,37 @@
         if (T.person && !person) return stop("f-person");
         if (!toOk) return stop("f-to");
         if (!isDate(d.date)) return stop("f-date");
-        const data = { type: d.type, title: d.title.trim(), amount, category: T.cat ? d.category : "", date: d.date, account: d.account, to: d.type === "transfer" ? d.to : "", person: T.person ? person : "", note: d.note.trim() };
+        const hasDue = d.type === "lent" || d.type === "borrowed";
+        const dueOk = !hasDue || !d.due || (isDate(d.due) && d.due >= d.date);
+        showErr("e-due", dueOk ? "" : "Pick a date on or after the day of the entry.");
+        if (!dueOk) return stop("f-due");
+        const data = {
+          type: d.type, title: d.title.trim(), amount, category: T.cat ? d.category : "", date: d.date, account: d.account, to: d.type === "transfer" ? d.to : "",
+          person: T.person ? person : "", note: d.note.trim(), method: d.type === "transfer" ? "" : METHODS[d.method] ? d.method : "other", due: hasDue && d.due ? d.due : "",
+        };
         if (T.cat) ui.lastCat[T.cat] = d.category;
         ui.lastAccount = d.account;
+        const m = monthOf(d.date), before = budgetStatus(m);
+        let msg;
         if (item) {
           const e = state.entries.find((x) => x.id === item.id);
           if (e) Object.assign(e, data);
-          commit(); toast("Saved");
+          commit(); msg = "Saved";
         } else {
-          state.entries.push({ id: uid(), ...data, recurringId: null });
+          state.entries.push({ id: uid(), ...data, recurringId: null, cur: "", orig: 0, rate: 0 });
           commit();
-          toast(monthOf(d.date) === monthOf(todayISO()) ? `${entryTitle(data)} added` : `${entryTitle(data)} added to ${fMonth(monthOf(d.date))}`);
+          msg = m === monthOf(todayISO()) ? `${entryTitle(data)} added` : `${entryTitle(data)} added to ${fMonth(m)}`;
         }
+        const crossed = state.settings.alerts ? crossedLevels(before, budgetStatus(m)).sort((a, b) => b.level - a.level) : [];
+        toast(crossed.length ? `${msg}. ${levelText(crossed[0])}` : msg);
       },
       onDelete: item ? () => { closeSheet(); deleteEntry(item.id); } : null,
+      onMount(card) {
+        card.addEventListener("change", (e) => {
+          if (e.target.id === "f-method") methodTouched = true;
+          if (e.target.id === "f-account" && !methodTouched && $("#f-method")) $("#f-method").value = methodFor(acctById(e.target.value)?.type, state.settings.currency);
+        });
+      },
     });
   }
   function deleteEntry(id) {
@@ -121,8 +141,8 @@
   /* ---------- recurring ---------- */
   function recurringForm(item = null) {
     const d = item
-      ? { kind: item.kind, name: item.name, amount: String(item.amount), category: item.category, frequency: item.frequency, start: item.start, end: item.end, variable: item.variable, auto: item.auto, account: item.account, to: item.to, note: item.note, active: item.active !== false }
-      : { kind: "expense", name: "", amount: "", category: "", frequency: "monthly", start: todayISO(), end: "", variable: false, auto: false, account: "", to: "", note: "", active: true };
+      ? { kind: item.kind, name: item.name, amount: String(item.amount), category: item.category, frequency: item.frequency, start: item.start, end: item.end, variable: item.variable, auto: item.auto, account: item.account, to: item.to, note: item.note, active: item.active !== false, method: item.method }
+      : { kind: "expense", name: "", amount: "", category: "", frequency: "monthly", start: todayISO(), end: "", variable: false, auto: false, account: "", to: "", note: "", active: true, method: "" };
     const pool = () => state.accounts.filter((a) => !a.archived || a.id === d.account || a.id === d.to);
     const fix = () => {
       const list = pool();
@@ -135,7 +155,7 @@
     const read = () => {
       const get = (id, key) => { const el = document.getElementById(id); if (el) d[key] = el.type === "checkbox" ? el.checked : el.value; };
       get("r-name", "name"); get("r-amount", "amount"); get("r-category", "category"); get("r-frequency", "frequency"); get("r-start", "start"); get("r-end", "end");
-      get("r-account", "account"); get("r-to", "to"); get("r-variable", "variable"); get("r-auto", "auto"); get("r-note", "note"); get("r-active", "active");
+      get("r-account", "account"); get("r-method", "method"); get("r-to", "to"); get("r-variable", "variable"); get("r-auto", "auto"); get("r-note", "note"); get("r-active", "active");
     };
     const TEXT = {
       expense: { eg: "e.g. Rent", acct: "Usually paid from", auto: "Add it by itself on the due date, like a subscription that charges your card" },
@@ -154,6 +174,7 @@
           <label class="field"><span class="lab">Ends on <span class="opt-lab">(optional)</span></span><input class="input" type="date" id="r-end" value="${esc(d.end)}" aria-describedby="e-end h-end"><span class="hint" id="h-end">For loans and instalments.</span><span class="err" id="e-end" hidden></span></label>
           ${d.kind === "transfer" ? "" : `<label class="field"><span class="lab">Category</span>${select("r-category", state.categories.filter((c) => c.kind === d.kind).map((c) => [c.id, c.name]), d.category)}</label>`}
           <label class="field"><span class="lab">${X.acct}</span>${select("r-account", list, d.account)}</label>
+          ${d.kind === "transfer" ? "" : `<label class="field"><span class="lab">${d.kind === "income" ? "Received by" : "Paid with"}</span>${select("r-method", methodChoices(), METHODS[d.method] ? d.method : methodFor(acctById(d.account)?.type, state.settings.currency))}</label>`}
           ${d.kind === "transfer" ? `<label class="field"><span class="lab">To</span>${select("r-to", list, d.to, ' aria-describedby="e-rto"')}<span class="err" id="e-rto" hidden></span></label>` : ""}
         </div>
         <label class="check"><input type="checkbox" id="r-variable"${d.variable ? " checked" : ""}><span>The amount changes each time, like an electricity bill</span></label>
@@ -191,6 +212,7 @@
           kind: d.kind, name, amount, category: d.kind === "transfer" ? "" : d.category, frequency: FREQ[d.frequency] ? d.frequency : "monthly",
           start: d.start, day: item && item.start === d.start ? item.day : Number(d.start.slice(8)), end: d.end || "",
           variable: !!d.variable, auto: !!d.auto, account: d.account, to: d.kind === "transfer" ? d.to : "", note: d.note.trim(),
+          method: d.kind === "transfer" ? "" : METHODS[d.method] ? d.method : methodFor(acctById(d.account)?.type, state.settings.currency),
         };
         if (item) {
           const r = state.recurring.find((x) => x.id === item.id);
@@ -320,10 +342,16 @@
       title: "Budgets",
       body: `<p class="sheet-intro">Set a limit for the whole month, for single categories, or both. Leave a box empty for no limit.</p>
         <label class="bfield total"><span class="min0"><b>Whole month</b><small>Everything you spend</small></span><input class="input" id="b-total" inputmode="decimal" placeholder="No limit" value="${state.settings.budget ? esc(String(state.settings.budget)) : ""}" autocomplete="off"></label>
+        <div class="bopts">
+          <label class="check"><input type="checkbox" id="b-alerts"${state.settings.alerts ? " checked" : ""}><span>Warn me when a budget reaches 50%, 80% and 100%</span></label>
+          <label class="check"><input type="checkbox" id="b-carry"${state.settings.carry ? " checked" : ""}><span>Carry unused budget into the next month<small>Only last month's leftover is added, so it doesn't pile up.</small></span></label>
+        </div>
         <div class="bfields">${cats.map((c) => `<label class="bfield"><span class="bname"><span class="ico" style="--c:${c.color}">${svg(c.icon)}</span><span class="min0"><b>${esc(c.name)}</b><small>${spent.get(c.id) ? `${esc(W(spent.get(c.id)))} spent this month` : "Nothing spent this month"}</small></span></span><input class="input" id="b-${esc(c.id)}" data-budget="${esc(c.id)}" inputmode="decimal" placeholder="No limit" value="${c.budget ? esc(String(c.budget)) : ""}" autocomplete="off" aria-label="${esc(c.name)} budget"></label>`).join("")}</div>`,
       foot: FOOT_ADD("Save budgets"),
       onSubmit() {
         state.settings.budget = parseAmount(val("b-total"));
+        state.settings.alerts = !!$("#b-alerts")?.checked;
+        state.settings.carry = !!$("#b-carry")?.checked;
         for (const el of $$("#sheet-body [data-budget]")) { const c = state.categories.find((x) => x.id === el.dataset.budget); if (c) c.budget = parseAmount(el.value); }
         commit(); toast("Budgets saved");
       },
@@ -448,12 +476,13 @@
   }
   const csvCell = (v, text) => { let s = String(v ?? ""); if (text && /^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   function toCSV() {
-    const rows = [["Date", "Type", "Description", "Category", "Amount", "Currency", "Account", "To account", "Person", "Note", "Recurring"].join(",")];
+    const rows = [["Date", "Type", "Description", "Category", "Amount", "Currency", "Account", "To account", "Method", "Person", "Pay back by", "Note", "Recurring", "Original amount", "Original currency", "Rate"].join(",")];
     const list = [...state.entries].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     for (const e of list) {
       rows.push([
         e.date, TYPES[e.type].label, csvCell(entryTitle(e), true), csvCell(e.category ? catById(e.category).name : "", true), e.amount.toFixed(2), state.settings.currency,
-        csvCell(acctName(e.account), true), csvCell(e.to ? acctName(e.to) : "", true), csvCell(e.person, true), csvCell(e.note, true), e.recurringId ? "Yes" : "",
+        csvCell(acctName(e.account), true), csvCell(e.to ? acctName(e.to) : "", true), METHODS[e.method] || "", csvCell(e.person, true), e.due || "", csvCell(e.note, true), e.recurringId ? "Yes" : "",
+        e.cur ? e.orig.toFixed(2) : "", e.cur || "", e.cur ? e.rate : "",
       ].join(","));
     }
     return rows.join("\r\n");
