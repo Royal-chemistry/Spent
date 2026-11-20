@@ -83,6 +83,16 @@
         break;
       }
       case "lend": entryForm(null, { type: "lent" }); break;
+      case "import": importSheet(); break;
+      case "export-menu": {
+        const what = periodLabel(ui.insPeriod, ui.anchor);
+        openMenu(el, [
+          { label: `PDF report for ${what}`, icon: "download", run: () => runExport("pdf") },
+          { label: `Excel workbook for ${what}`, icon: "download", run: () => runExport("xlsx") },
+          { label: `CSV of entries for ${what}`, icon: "download", run: () => runExport("csv") },
+        ]);
+        break;
+      }
       case "go-insights": if (location.hash === "#insights") route(); else location.hash = "insights"; break;
       case "go-health": ui.insPeriod = "month"; ui.anchor = todayISO(); if (location.hash === "#insights") route(); else location.hash = "insights"; setTimeout(() => $(".health")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }), 60); break;
       case "go-subs": ui.recFilter = "subs"; ui.recQuery = ""; if (location.hash === "#recurring") route(); else location.hash = "recurring"; break;

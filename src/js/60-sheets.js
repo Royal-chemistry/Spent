@@ -1,5 +1,9 @@
   /* ================= sheets ================= */
   let sheetSubmit = null, sheetDelete = null, sheetAct = null, lastFocus = null;
+  /* Listeners a sheet adds to the shared form. They're removed when the sheet closes or another opens,
+     so an earlier sheet can never react to a later one. */
+  let sheetListeners = [];
+  function dropSheetListeners() { const card = $("#sheet-card"); for (const [t, f, o] of sheetListeners) card.removeEventListener(t, f, o); sheetListeners = []; }
   function openSheet({ title, body, foot, onSubmit = null, onDelete = null, onMount = null, onAct = null }) {
     closeMenu();
     if ($("#sheet").hidden) lastFocus = document.activeElement;
@@ -11,7 +15,10 @@
     $("#scrim").hidden = false; $("#sheet").hidden = false;
     document.body.classList.add("locked");
     $("#sheet-body").scrollTop = 0;
-    if (onMount) onMount($("#sheet-card"));
+    dropSheetListeners();
+    const card = $("#sheet-card");
+    const scope = { addEventListener: (t, f, o) => { card.addEventListener(t, f, o); sheetListeners.push([t, f, o]); }, querySelector: (q) => card.querySelector(q), querySelectorAll: (q) => card.querySelectorAll(q) };
+    if (onMount) onMount(scope);
     setTimeout(() => { const f = $("#sheet-card [autofocus]") || $("#sheet-body input, #sheet-body select, #sheet-body button"); f?.focus({ preventScroll: true }); }, 40);
   }
   function closeSheet() {
@@ -20,6 +27,7 @@
     document.body.classList.remove("locked");
     $("#sheet-body").innerHTML = ""; $("#sheet-foot").innerHTML = "";
     sheetSubmit = sheetDelete = sheetAct = null;
+    dropSheetListeners();
     if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
   }
   function showErr(id, msg) { const el = document.getElementById(id); if (!el) return; el.textContent = msg; el.hidden = !msg; }
@@ -426,6 +434,7 @@
           <p class="sync-line"><span class="sync-dot" id="sync-dot" data-s="${!storageOK && !cloud.col ? "nostore" : cloud.status}"></span><span id="sync-status">${esc(syncText())}</span></p>
           <p class="hint">${cloud.col ? "Only you can see what you save here." : "Data saved in this browser stays on this device. Clearing your browser data erases it, so download a backup now and then."}</p>
           <div class="data-btns">
+            <button type="button" class="btn" data-act="import">${svg("upload")}Import from bank or CSV</button>
             <button type="button" class="btn" data-act="export-csv">${svg("download")}Export CSV</button>
             <button type="button" class="btn" data-act="backup">${svg("download")}Download backup</button>
             <label class="btn">${svg("upload")}Restore backup<input type="file" id="set-restore" class="sr" accept=".json,application/json"></label>
@@ -510,9 +519,9 @@
     reader.readAsText(file);
   }
   const csvCell = (v, text) => { let s = String(v ?? ""); if (text && /^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-  function toCSV() {
+  function toCSV(entries = state.entries) {
     const rows = [["Date", "Type", "Description", "Category", "Amount", "Currency", "Account", "To account", "Method", "Person", "Pay back by", "Note", "Recurring", "Original amount", "Original currency", "Rate"].join(",")];
-    const list = [...state.entries].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    const list = [...entries].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     for (const e of list) {
       rows.push([
         e.date, TYPES[e.type].label, csvCell(entryTitle(e), true), csvCell(e.category ? catById(e.category).name : "", true), e.amount.toFixed(2), state.settings.currency,

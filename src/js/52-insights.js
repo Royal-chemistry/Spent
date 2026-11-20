@@ -93,7 +93,7 @@
     const seg = (k, l) => `<button type="button" data-act="ins-period" data-k="${k}" aria-pressed="${p === k}">${l}</button>`;
     $("#view-insights").innerHTML = `<div class="wrap view-body">
       <header class="view-head"><div><p class="eyebrow">Insights</p><h1 class="large-title">${esc(periodLabel(p, ui.anchor))}</h1></div>
-        <div class="head-tools"><div class="seg" role="group" aria-label="Report period">${seg("week", "Week")}${seg("month", "Month")}${seg("year", "Year")}</div>${periodNav(p)}</div></header>
+        <div class="head-tools"><button type="button" class="btn" data-act="export-menu" aria-haspopup="menu">${svg("download")}Export</button><div class="seg" role="group" aria-label="Report period">${seg("week", "Week")}${seg("month", "Month")}${seg("year", "Year")}</div>${periodNav(p)}</div></header>
       <div class="kpis">
         ${kpi("Spent", W(Math.max(0, spent)), elapsed ? `${W(Math.max(0, spent) / elapsed)} a day on average` : `This ${PERIOD_WORD[p]} hasn't started`)}
         ${kpi("Came in", W(income), nIncome ? plural(nIncome, "income entry", "income entries") : "No income logged")}
