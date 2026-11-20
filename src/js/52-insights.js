@@ -99,6 +99,6 @@
         ${kpi("Came in", W(income), nIncome ? plural(nIncome, "income entry", "income entries") : "No income logged")}
         ${income > 0 ? kpi(net >= 0 ? "Kept" : "Short by", W(Math.abs(net)), net >= 0 ? `A savings rate of ${Math.round((net / income) * 100)}%` : "You spent more than came in", net >= 0 ? "good" : "bad") : kpi("Kept", "None yet", "Add income to see your savings rate")}
         ${kpi(`Spending against ${prevName}`, changeText, change === null ? `Nothing logged for ${prevName}` : isCur ? `${W(prev)} at the same point` : `${W(prev)} in ${prevName}`, change === null ? "" : change > 0.05 ? "warn" : change < -0.05 ? "good" : "")}
-      </div>${body}</div>`;
+      </div><div class="insights smart">${smartSection(p)}</div>${body}</div>`;
   }
 

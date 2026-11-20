@@ -13,7 +13,9 @@ css = read('css/base.css') + read('css/v2.css') + read('css/v3.css')
 js = ''.join(read(f'js/{f.name}') for f in sorted((src / 'js').glob('*.js')))
 style = '<style>\n' + css + '</style>\n'
 themes = '<script>\n' + read('themes.js') + '</script>\n'
-app = read('body.html') + '\n<script>\n(() => {\n  "use strict";\n\n' + js + '})();\n</script>\n'
+import os
+test_hook = '  window.__spentTest = { parseQuick, guessCategory, findInsights, healthScore, forecastMonth, budgetStatus };\n' if os.environ.get('SPENT_TEST') else ''
+app = read('body.html') + '\n<script>\n(() => {\n  "use strict";\n\n' + js + test_hook + '})();\n</script>\n'
 
 fragment = read('head.html') + style + themes + app
 

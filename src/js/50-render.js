@@ -155,7 +155,7 @@
     const streak = noSpendStreak(), liq = liquidity(bal);
     const goalTarget = sum(goals.map((a) => a.target)), goalSaved = sum(goals.map((a) => bal.get(a.id) || 0));
     const left = round2(budget - spent), perDay = Math.max(0, left - bills.unpaid) / daysLeft;
-    const glance = `<section class="wrap home-kpis" aria-label="Today at a glance"><div class="kpis">
+    const glance = `<section class="wrap home-kpis" aria-label="Today at a glance">${quickForm()}<div class="kpis">
         ${kpi("Spent today", W(todaySpent), nToday ? plural(nToday, "expense") : streak > 1 ? `No-spend streak: ${plural(streak, "day")}` : "Nothing yet today")}
         ${kpi("Available now", signed(liq.available, { whole: true }), liq.cardOwed > 0 ? `${W(liq.cardOwed)} owed on cards` : "Cash, bank and wallets", liq.available < 0 ? "bad" : "")}
         ${kpi("Total savings", W(liq.saved), goalTarget > 0 ? `${Math.round((goalSaved / goalTarget) * 100)}% of your goal targets` : "Savings, investments and goals")}
@@ -169,6 +169,8 @@
 
     const rows = [];
     rows.push(row("Up next", "#recurring", "All recurring", upcomingCards.length ? upcomingCards.map((x) => x.html).join("") : emptyTile("Add rent, subscriptions, bills and your salary, and you'll see what's coming up.", "add-rec", "Add recurring")));
+    const forYou = forYouRow();
+    if (forYou) rows.push(forYou);
     if (accts.length) rows.push(row("Your money", "#wallet", "Wallet", accts.map((a) => acctCard(a, bal.get(a.id) || 0)).join("")));
     if (mt.some((x) => x.income > 0 || x.spent > 0)) rows.push(`<section class="row"><div class="wrap row-head"><h2>In and out</h2><a class="see-all" href="#insights">Insights${svg("right")}</a></div><div class="wrap"><div class="card home-chart">${flowChart(months6, mt)}</div></div></section>`);
     const top = list.filter((e) => e.type === "expense").sort((a, b) => b.amount - a.amount).slice(0, 5);

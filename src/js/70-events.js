@@ -83,6 +83,10 @@
         break;
       }
       case "lend": entryForm(null, { type: "lent" }); break;
+      case "go-insights": if (location.hash === "#insights") route(); else location.hash = "insights"; break;
+      case "go-health": ui.insPeriod = "month"; ui.anchor = todayISO(); if (location.hash === "#insights") route(); else location.hash = "insights"; setTimeout(() => $(".health")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }), 60); break;
+      case "go-subs": ui.recFilter = "subs"; ui.recQuery = ""; if (location.hash === "#recurring") route(); else location.hash = "recurring"; break;
+      case "go-calendar": ui.actPeriod = "month"; ui.actView = "calendar"; ui.anchor = todayISO(); if (location.hash === "#activity") route(); else location.hash = "activity"; break;
       case "start-fresh": startFresh("Sample data cleared. Add your first entry when you're ready"); break;
       case "hide-banner": ui.bannerHidden = true; renderBanner(); break;
       case "month-prev": setMonth(addMonths(ui.month, -1)); break;
@@ -122,7 +126,18 @@
     if (sheetSubmit) { if (sheetSubmit() === false) return; }
     closeSheet();
   });
+  document.addEventListener("submit", (e) => {
+    if (e.target.id !== "quick-form") return;
+    e.preventDefault();
+    const input = $("#quick-input"), text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    if (quickAdd(text)) input.value = "";
+  });
   document.addEventListener("input", (e) => {
+    if (e.target.id === "quick-input") {
+      const q = parseQuick(e.target.value), out = $("#quick-preview");
+      if (out) out.textContent = !e.target.value.trim() ? "Write it the way you'd say it. You can add the date, how you paid, or who you lent money to." : q.amount ? `${quickSummary(q)}${TYPES[q.type].person && !q.person ? ". Add who it's with." : ""}` : "Add an amount, like ₹250.";
+    }
     if (e.target.id === "act-search") { ui.actQuery = e.target.value; renderActList(); }
     else if (e.target.id === "rec-search") { ui.recQuery = e.target.value; renderRecList(); }
   });

@@ -30,7 +30,7 @@
   const FOOT_EDIT = (del = `${svg("trash")}Delete`) => `<button type="button" class="btn danger" data-sheet-del>${del}</button><span class="spacer"></span><button type="button" class="btn" data-sheet-close>Cancel</button><button type="submit" class="btn primary">Save</button>`;
 
   function categoryPicker(sel, kind) {
-    return `<fieldset class="field"><legend class="lab">Category</legend><div class="catpick">${state.categories.filter((c) => c.kind === kind).map((c) => `<label><input type="radio" name="category" value="${esc(c.id)}"${c.id === sel ? " checked" : ""}><span class="opt"><span class="ico" style="--c:${c.color}">${svg(c.icon)}</span>${esc(c.name)}</span></label>`).join("")}</div></fieldset>`;
+    return `<fieldset class="field"><legend class="lab">Category</legend><div class="catpick">${state.categories.filter((c) => c.kind === kind).map((c) => `<label><input type="radio" name="category" value="${esc(c.id)}"${c.id === sel ? " checked" : ""}><span class="opt"><span class="ico" style="--c:${c.color}">${svg(c.icon)}</span>${esc(c.name)}</span></label>`).join("")}</div><p class="hint cat-hint" id="cat-hint" hidden></p></fieldset>`;
   }
   const select = (id, list, sel, extra = "") => `<span class="select-wrap full"><select id="${id}" class="select"${extra}>${opts(list, sel)}</select>${svg("down")}</span>`;
   const acctOptions = (pool) => pool.map((a) => [a.id, a.type === "goal" ? `${a.name} (goal)` : a.name]);
@@ -40,7 +40,7 @@
     const d = item
       ? { type: item.type, amount: String(item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note, method: item.method, due: item.due }
       : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", title: preset.title || "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "", method: preset.method || "", due: "" };
-    let methodTouched = !!(item || preset.method);
+    let methodTouched = !!(item || preset.method), catTouched = !!(item || preset.category), catTimer = 0;
     const pool = () => state.accounts.filter((a) => !a.archived || a.id === d.account || a.id === d.to);
     const fix = () => { // keep the draft valid for its type
       const T = TYPES[d.type], list = pool();
@@ -60,6 +60,7 @@
     const body = () => {
       const T = TYPES[d.type], list = acctOptions(pool());
       return `
+        ${item ? "" : `<div class="field"><div class="quick-in"><label class="quick-field"><span class="sr">Type the entry</span>${svg("spark")}<input id="f-quick" maxlength="160" placeholder="Or type it: “Lent ₹500 to Sam yesterday”" autocomplete="off" aria-describedby="e-quick"></label><button type="button" class="btn" data-act="sheet" data-k="fill">Fill in</button></div><p class="hint" id="e-quick"></p></div>`}
         <div class="field"><div class="typepick" role="group" aria-label="Type of entry">${Object.entries(TYPES).map(([k, x]) => `<button type="button" class="chip" data-act="sheet" data-k="${k}" aria-pressed="${d.type === k}">${x.label}</button>`).join("")}</div><p class="hint">${TYPE_HINT[d.type]}</p></div>
         <div class="field"><label class="amount-field" for="f-amount"><span class="sym">${esc(curSymbol())}</span><input id="f-amount" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(d.amount)}" aria-label="Amount" aria-describedby="e-amount"${item ? "" : " autofocus"}></label><p class="err" id="e-amount" hidden></p></div>
         ${T.person ? `<label class="field"><span class="lab">${T.person}</span><input class="input" id="f-person" maxlength="40" list="people-list" placeholder="Their name" value="${esc(d.person)}" autocomplete="off" aria-describedby="e-person"><datalist id="people-list">${people().map((p) => `<option value="${esc(p.name)}"></option>`).join("")}</datalist><span class="err" id="e-person" hidden></span></label>` : ""}
@@ -80,6 +81,26 @@
       body: body(),
       foot: item ? FOOT_EDIT() : FOOT_ADD("Add entry"),
       onAct(k) {
+        if (k === "fill") {
+          const text = val("f-quick");
+          read();
+          const q = parseQuick(text);
+          if (!text || (!q.amount && !q.title && !q.person)) { const h = $("#e-quick"); if (h) h.textContent = "Type something like “Spent ₹250 on food today” first."; $("#f-quick")?.focus(); return; }
+          Object.assign(d, { type: q.type, date: q.date });
+          if (q.amount) d.amount = String(q.amount);
+          if (q.title) d.title = q.title;
+          if (q.category) { d.category = q.category; catTouched = true; }
+          if (q.account) d.account = q.account;
+          if (q.to) d.to = q.to;
+          if (q.person) d.person = q.person;
+          if (q.method) { d.method = q.method; methodTouched = true; }
+          fix();
+          $("#sheet-body").innerHTML = body();
+          $("#f-quick").value = text;
+          $("#e-quick").textContent = `Filled in: ${quickSummary(q) || TYPES[q.type].label}. Check it, then add.`;
+          $("#f-amount")?.focus();
+          return;
+        }
         if (!TYPES[k]) return;
         read(); d.type = k; fix();
         $("#sheet-body").innerHTML = body();
@@ -123,7 +144,21 @@
       },
       onDelete: item ? () => { closeSheet(); deleteEntry(item.id); } : null,
       onMount(card) {
+        // Pick the category from what's typed, until the person picks one themselves
+        card.addEventListener("input", (e) => {
+          if (e.target.id !== "f-title" || catTouched || !TYPES[d.type].cat) return;
+          clearTimeout(catTimer);
+          catTimer = setTimeout(() => {
+            const g = guessCategory(e.target.value, TYPES[d.type].cat), hint = $("#cat-hint");
+            if (!g) { if (hint) hint.hidden = true; return; }
+            const radio = $(`#sheet-card input[name=category][value="${CSS.escape(g.id)}"]`);
+            if (radio && !radio.checked) radio.checked = true;
+            if (hint) { hint.textContent = g.from === "history" ? "Picked from your past entries. Tap another to change it." : "Picked from the words you typed. Tap another to change it."; hint.hidden = false; }
+          }, 220);
+        });
+        card.addEventListener("keydown", (e) => { if (e.target.id === "f-quick" && e.key === "Enter") { e.preventDefault(); sheetAct?.("fill"); } });
         card.addEventListener("change", (e) => {
+          if (e.target.name === "category") { catTouched = true; const hint = $("#cat-hint"); if (hint) hint.hidden = true; }
           if (e.target.id === "f-method") methodTouched = true;
           if (e.target.id === "f-account" && !methodTouched && $("#f-method")) $("#f-method").value = methodFor(acctById(e.target.value)?.type, state.settings.currency);
         });
