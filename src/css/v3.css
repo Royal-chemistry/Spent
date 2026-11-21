@@ -137,3 +137,12 @@ button.insight:hover { border-color: var(--line-strong); }
 .btn[disabled] { opacity: .45; cursor: default; }
 .sheet-body { grid-auto-rows: max-content; }
 .imp-preview td:first-child { white-space: nowrap; }
+
+/* ================= other currencies ================= */
+.amount-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.cur-pick .select { height: 42px; min-width: 92px; font-family: var(--font-mono); font-size: 13px; }
+.fx { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; }
+.fx-rate { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--fg-2); }
+.fx-rate b { color: var(--fg); font-weight: 600; }
+.fx-rate .input { width: 120px; height: 40px; }
+.fx-out { font-size: 13.5px; color: var(--fg-2); }

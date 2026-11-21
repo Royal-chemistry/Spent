@@ -46,8 +46,8 @@
   /* ---------- an entry of any type ---------- */
   function entryForm(item = null, preset = {}) {
     const d = item
-      ? { type: item.type, amount: String(item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note, method: item.method, due: item.due }
-      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", title: preset.title || "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "", method: preset.method || "", due: "" };
+      ? { type: item.type, amount: String(item.cur ? item.orig : item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note, method: item.method, due: item.due, cur: item.cur || "", rate: item.cur ? String(item.rate) : "" }
+      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", cur: preset.cur && preset.cur !== state.settings.currency ? preset.cur : "", rate: preset.cur && state.settings.rates?.[preset.cur] ? String(state.settings.rates[preset.cur]) : "", title: preset.title || "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "", method: preset.method || "", due: "" };
     let methodTouched = !!(item || preset.method), catTouched = !!(item || preset.category), catTimer = 0;
     const pool = () => state.accounts.filter((a) => !a.archived || a.id === d.account || a.id === d.to);
     const fix = () => { // keep the draft valid for its type
@@ -61,7 +61,8 @@
     };
     const read = () => { // pull what's been typed back into the draft
       const get = (id, key) => { const el = document.getElementById(id); if (el) d[key] = el.value; };
-      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person"); get("f-method", "method"); get("f-due", "due");
+      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person"); get("f-method", "method"); get("f-due", "due"); get("f-rate", "rate");
+      const cs = document.getElementById("f-cur"); if (cs) d.cur = cs.value === state.settings.currency ? "" : cs.value;
       const c = $("#sheet-card input[name=category]:checked");
       if (c) d.category = c.value;
     };
@@ -70,7 +71,10 @@
       return `
         ${item ? "" : `<div class="field"><div class="quick-in"><label class="quick-field"><span class="sr">Type the entry</span>${svg("spark")}<input id="f-quick" maxlength="160" placeholder="Or type it: “Lent ₹500 to Sam yesterday”" autocomplete="off" aria-describedby="e-quick"></label><button type="button" class="btn" data-act="sheet" data-k="fill">Fill in</button></div><p class="hint" id="e-quick"></p></div>`}
         <div class="field"><div class="typepick" role="group" aria-label="Type of entry">${Object.entries(TYPES).map(([k, x]) => `<button type="button" class="chip" data-act="sheet" data-k="${k}" aria-pressed="${d.type === k}">${x.label}</button>`).join("")}</div><p class="hint">${TYPE_HINT[d.type]}</p></div>
-        <div class="field"><label class="amount-field" for="f-amount"><span class="sym">${esc(curSymbol())}</span><input id="f-amount" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(d.amount)}" aria-label="Amount" aria-describedby="e-amount"${item ? "" : " autofocus"}></label><p class="err" id="e-amount" hidden></p></div>
+        <div class="field"><div class="amount-row"><label class="amount-field" for="f-amount"><span class="sym" id="f-sym">${esc(symbolFor(d.cur || state.settings.currency))}</span><input id="f-amount" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(d.amount)}" aria-label="Amount" aria-describedby="e-amount fx-out"${item ? "" : " autofocus"}></label>
+          <span class="select-wrap cur-pick"><select id="f-cur" class="select" aria-label="Currency of this amount">${opts(CURRENCIES.map((c) => [c, c]), d.cur || state.settings.currency)}</select>${svg("down")}</span></div>
+          <div class="fx" id="fx-row"${d.cur ? "" : " hidden"}><label class="fx-rate"><span>1 <b id="fx-code">${esc(d.cur || "")}</b> =</span><input class="input" id="f-rate" inputmode="decimal" value="${esc(d.rate)}" placeholder="Rate" aria-label="Exchange rate" aria-describedby="e-rate"><span>${esc(state.settings.currency)}</span></label><span class="fx-out" id="fx-out" aria-live="polite">${esc(fxText(d))}</span></div>
+          <p class="err" id="e-rate" hidden></p><p class="err" id="e-amount" hidden></p></div>
         ${T.person ? `<label class="field"><span class="lab">${T.person}</span><input class="input" id="f-person" maxlength="40" list="people-list" placeholder="Their name" value="${esc(d.person)}" autocomplete="off" aria-describedby="e-person"><datalist id="people-list">${people().map((p) => `<option value="${esc(p.name)}"></option>`).join("")}</datalist><span class="err" id="e-person" hidden></span></label>` : ""}
         <label class="field"><span class="lab">${d.type === "transfer" ? "Label" : "What for?"} <span class="opt-lab">(optional)</span></span><input class="input" id="f-title" maxlength="80" placeholder="${TYPE_EG[d.type]}" value="${esc(d.title)}" autocomplete="off"></label>
         ${T.cat ? categoryPicker(d.category, T.cat) : ""}
@@ -116,7 +120,11 @@
       },
       onSubmit() {
         read();
-        const T = TYPES[d.type], amount = parseAmount(d.amount), person = d.person.trim();
+        const T = TYPES[d.type], person = d.person.trim();
+        const orig = parseAmount(d.amount), rate = d.cur ? parseRate(d.rate) : 0;
+        const amount = d.cur ? round2(orig * rate) : orig;
+        showErr("e-rate", !d.cur || rate > 0 ? "" : `Enter the rate you got: how many ${state.settings.currency} one ${d.cur} cost.`);
+        if (d.cur && !(rate > 0)) return stop("f-rate");
         const toOk = d.type !== "transfer" || (d.to && d.to !== d.account);
         showErr("e-amount", amount > 0 ? "" : "Enter an amount above zero.");
         showErr("e-person", !T.person || person ? "" : "Add the person's name.");
@@ -133,7 +141,9 @@
         const data = {
           type: d.type, title: d.title.trim(), amount, category: T.cat ? d.category : "", date: d.date, account: d.account, to: d.type === "transfer" ? d.to : "",
           person: T.person ? person : "", note: d.note.trim(), method: d.type === "transfer" ? "" : METHODS[d.method] ? d.method : "other", due: hasDue && d.due ? d.due : "",
+          cur: d.cur || "", orig: d.cur ? orig : 0, rate: d.cur ? rate : 0,
         };
+        if (d.cur) state.settings.rates = { ...(state.settings.rates || {}), [d.cur]: rate };
         if (T.cat) ui.lastCat[T.cat] = d.category;
         ui.lastAccount = d.account;
         const m = monthOf(d.date), before = budgetStatus(m);
@@ -143,7 +153,7 @@
           if (e) Object.assign(e, data);
           commit(); msg = "Saved";
         } else {
-          state.entries.push({ id: uid(), ...data, recurringId: null, cur: "", orig: 0, rate: 0 });
+          state.entries.push({ id: uid(), ...data, recurringId: null });
           commit();
           msg = m === monthOf(todayISO()) ? `${entryTitle(data)} added` : `${entryTitle(data)} added to ${fMonth(m)}`;
         }
@@ -165,6 +175,16 @@
           }, 220);
         });
         card.addEventListener("keydown", (e) => { if (e.target.id === "f-quick" && e.key === "Enter") { e.preventDefault(); sheetAct?.("fill"); } });
+        const fx = () => { read(); const out = $("#fx-out"); if (out) out.textContent = fxText(d); };
+        card.addEventListener("input", (e) => { if (e.target.id === "f-amount" || e.target.id === "f-rate") fx(); });
+        card.addEventListener("change", (e) => {
+          if (e.target.id !== "f-cur") return;
+          read();
+          const row = $("#fx-row"); if (row) row.hidden = !d.cur;
+          $("#f-sym").textContent = symbolFor(d.cur || state.settings.currency);
+          if (d.cur) { $("#fx-code").textContent = d.cur; const known = state.settings.rates?.[d.cur]; if (known && !$("#f-rate").value) $("#f-rate").value = String(known); $("#f-rate").focus(); }
+          fx();
+        });
         card.addEventListener("change", (e) => {
           if (e.target.name === "category") { catTouched = true; const hint = $("#cat-hint"); if (hint) hint.hidden = true; }
           if (e.target.id === "f-method") methodTouched = true;
@@ -424,8 +444,9 @@
       body: `
         <section class="set-group" id="set-appearance">${appearanceHTML()}</section>
         <section class="set-group"><h3>Money</h3>
-          <label class="field"><span class="lab">Currency</span>${select("set-currency", CURRENCIES.map((c) => [c, `${c} · ${currencyName(c)}`]), s.currency)}</label>
+          <label class="field"><span class="lab">Currency</span>${select("set-currency", CURRENCIES.map((c) => [c, `${c} · ${currencyName(c)}`]), s.currency, ' aria-describedby="h-currency"')}<span class="hint" id="h-currency">Totals are in this currency. Changing it doesn't convert amounts you've already entered. For a one-off in another currency, pick it next to the amount when you add the entry.</span></label>
           <div class="set-line"><span>Budgets<small>${s.budget ? `${esc(W(s.budget))} a month` : "No monthly budget"}${nb ? ` · ${plural(nb, "category budget")}` : ""}</small></span><button type="button" class="btn small" data-act="budgets">Edit budgets</button></div></section>
+        <section class="set-group" id="set-remind-group">${remindHTML()}</section>
         <section class="set-group"><h3>Categories</h3>
           <p class="lab">Spending</p><div class="cat-list" id="set-cats-expense"></div>
           <p class="lab">Income</p><div class="cat-list" id="set-cats-income"></div>
@@ -455,6 +476,7 @@
         $("#set-currency", card).addEventListener("change", (e) => { state.settings.currency = e.target.value; commit(); });
         $("#set-newcat", card).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addCategory(); } });
         $("#set-restore", card).addEventListener("change", (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) readBackup(f); });
+        card.addEventListener("change", (e) => { if (e.target.id === "set-remind") enableReminders(e.target.checked); });
       },
     });
   }

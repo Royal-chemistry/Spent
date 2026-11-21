@@ -857,6 +857,15 @@ button.insight:hover { border-color: var(--line-strong); }
 .btn[disabled] { opacity: .45; cursor: default; }
 .sheet-body { grid-auto-rows: max-content; }
 .imp-preview td:first-child { white-space: nowrap; }
+
+/* ================= other currencies ================= */
+.amount-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.cur-pick .select { height: 42px; min-width: 92px; font-family: var(--font-mono); font-size: 13px; }
+.fx { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; }
+.fx-rate { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--fg-2); }
+.fx-rate b { color: var(--fg); font-weight: 600; }
+.fx-rate .input { width: 120px; height: 40px; }
+.fx-out { font-size: 13.5px; color: var(--fg-2); }
 </style>
 <script>
 /* Themes. Each one is ten colours per mode plus a few type and shape settings; every other token is derived from those.
@@ -1000,7 +1009,6 @@ button.insight:hover { border-color: var(--line-strong); }
   <footer class="site-foot">
     <div class="wrap">
       <p>Spent is free for anyone to use. Your entries are private to you.</p>
-      <p id="foot-sync">Saved in this browser</p>
     </div>
   </footer>
 </main>
@@ -1286,6 +1294,8 @@ button.insight:hover { border-color: var(--line-strong); }
     out.settings.carry = !!set.carry;
     out.settings.alerts = set.alerts !== false;
     out.settings.remind = !!set.remind;
+    out.settings.rates = {};
+    if (set.rates && typeof set.rates === "object") for (const [c, r] of Object.entries(set.rates)) if (CURRENCIES.includes(c) && Number(r) > 0 && Number(r) < 1e7) out.settings.rates[c] = Number(r);
     const hex = (c) => /^#[0-9a-f]{6}$/i.test(c);
 
     if (Array.isArray(s.categories) && s.categories.length) {
@@ -1467,7 +1477,7 @@ button.insight:hover { border-color: var(--line-strong); }
     if (T.person) bits.push(e.title ? `${T.label}, ${e.person}` : T.label);
     if (e.type === "transfer") bits.push(e.title ? `${acctName(e.account)} to ${acctName(e.to)}` : "Transfer");
     else { if (methodShown(e)) bits.push(METHODS[e.method]); bits.push(acctName(e.account)); }
-    if (e.cur) bits.push(`${fmtCur(e.orig, e.cur)} at ${e.rate}`);
+    if (e.cur) bits.push(`Paid in ${e.cur} at ${e.rate}`);
     if (e.recurringId && state.recurring.some((r) => r.id === e.recurringId)) bits.push("Recurring");
     if (e.note) bits.push(e.note);
     return bits.map(esc).join(" · ");
@@ -1701,6 +1711,16 @@ button.insight:hover { border-color: var(--line-strong); }
       else saved += b;
     }
     return { available: round2(available), cardOwed: round2(cardOwed), saved: round2(saved) };
+  }
+  /* ---------- other currencies ---------- */
+  function symbolFor(cur) { try { return nf(cur, 0).formatToParts(0).find((p) => p.type === "currency")?.value || cur; } catch { return cur; } }
+  /* Rates can need more than two decimals (1 JPY = 0.5512 INR). A comma works as the decimal mark too. */
+  function parseRate(v) { const s = String(v ?? "").trim().replace(/\s/g, "").replace(/,(?=\d+$)/, ".").replace(/,/g, ""); const n = Number(s); return Number.isFinite(n) && n > 0 && n < 1e7 ? Number(n.toPrecision(8)) : 0; }
+  function fxText(d) {
+    if (!d.cur) return "";
+    const orig = parseAmount(d.amount), rate = parseRate(d.rate);
+    if (!(orig > 0) || !(rate > 0)) return "Type the rate to see the amount in " + state.settings.currency + ".";
+    return `= ${money(round2(orig * rate))}, which is what counts in your totals`;
   }
   const METHOD_COLORS = { upi: "#0E7490", debit: "#1D4ED8", credit: "#3F3F46", cash: "#15803D", bank: "#4338CA", wallet: "#7C3AED", other: "#52525B" };
 
@@ -2369,6 +2389,7 @@ button.insight:hover { border-color: var(--line-strong); }
     render();
     queueSync();
     setSync(cloud.col ? cloud.status : "local");
+    syncReminders();
   }
   function withUndo(mutate, msg) {
     const snap = JSON.stringify(state);
@@ -3109,8 +3130,8 @@ button.insight:hover { border-color: var(--line-strong); }
   /* ---------- an entry of any type ---------- */
   function entryForm(item = null, preset = {}) {
     const d = item
-      ? { type: item.type, amount: String(item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note, method: item.method, due: item.due }
-      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", title: preset.title || "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "", method: preset.method || "", due: "" };
+      ? { type: item.type, amount: String(item.cur ? item.orig : item.amount), title: item.title, category: item.category, date: item.date, account: item.account, to: item.to, person: item.person, note: item.note, method: item.method, due: item.due, cur: item.cur || "", rate: item.cur ? String(item.rate) : "" }
+      : { type: TYPES[preset.type] ? preset.type : "expense", amount: preset.amount ? String(preset.amount) : "", cur: preset.cur && preset.cur !== state.settings.currency ? preset.cur : "", rate: preset.cur && state.settings.rates?.[preset.cur] ? String(state.settings.rates[preset.cur]) : "", title: preset.title || "", category: preset.category || "", date: preset.date || todayISO(), account: preset.account || "", to: preset.to || "", person: preset.person || "", note: "", method: preset.method || "", due: "" };
     let methodTouched = !!(item || preset.method), catTouched = !!(item || preset.category), catTimer = 0;
     const pool = () => state.accounts.filter((a) => !a.archived || a.id === d.account || a.id === d.to);
     const fix = () => { // keep the draft valid for its type
@@ -3124,7 +3145,8 @@ button.insight:hover { border-color: var(--line-strong); }
     };
     const read = () => { // pull what's been typed back into the draft
       const get = (id, key) => { const el = document.getElementById(id); if (el) d[key] = el.value; };
-      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person"); get("f-method", "method"); get("f-due", "due");
+      get("f-amount", "amount"); get("f-title", "title"); get("f-date", "date"); get("f-note", "note"); get("f-account", "account"); get("f-to", "to"); get("f-person", "person"); get("f-method", "method"); get("f-due", "due"); get("f-rate", "rate");
+      const cs = document.getElementById("f-cur"); if (cs) d.cur = cs.value === state.settings.currency ? "" : cs.value;
       const c = $("#sheet-card input[name=category]:checked");
       if (c) d.category = c.value;
     };
@@ -3133,7 +3155,10 @@ button.insight:hover { border-color: var(--line-strong); }
       return `
         ${item ? "" : `<div class="field"><div class="quick-in"><label class="quick-field"><span class="sr">Type the entry</span>${svg("spark")}<input id="f-quick" maxlength="160" placeholder="Or type it: “Lent ₹500 to Sam yesterday”" autocomplete="off" aria-describedby="e-quick"></label><button type="button" class="btn" data-act="sheet" data-k="fill">Fill in</button></div><p class="hint" id="e-quick"></p></div>`}
         <div class="field"><div class="typepick" role="group" aria-label="Type of entry">${Object.entries(TYPES).map(([k, x]) => `<button type="button" class="chip" data-act="sheet" data-k="${k}" aria-pressed="${d.type === k}">${x.label}</button>`).join("")}</div><p class="hint">${TYPE_HINT[d.type]}</p></div>
-        <div class="field"><label class="amount-field" for="f-amount"><span class="sym">${esc(curSymbol())}</span><input id="f-amount" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(d.amount)}" aria-label="Amount" aria-describedby="e-amount"${item ? "" : " autofocus"}></label><p class="err" id="e-amount" hidden></p></div>
+        <div class="field"><div class="amount-row"><label class="amount-field" for="f-amount"><span class="sym" id="f-sym">${esc(symbolFor(d.cur || state.settings.currency))}</span><input id="f-amount" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(d.amount)}" aria-label="Amount" aria-describedby="e-amount fx-out"${item ? "" : " autofocus"}></label>
+          <span class="select-wrap cur-pick"><select id="f-cur" class="select" aria-label="Currency of this amount">${opts(CURRENCIES.map((c) => [c, c]), d.cur || state.settings.currency)}</select>${svg("down")}</span></div>
+          <div class="fx" id="fx-row"${d.cur ? "" : " hidden"}><label class="fx-rate"><span>1 <b id="fx-code">${esc(d.cur || "")}</b> =</span><input class="input" id="f-rate" inputmode="decimal" value="${esc(d.rate)}" placeholder="Rate" aria-label="Exchange rate" aria-describedby="e-rate"><span>${esc(state.settings.currency)}</span></label><span class="fx-out" id="fx-out" aria-live="polite">${esc(fxText(d))}</span></div>
+          <p class="err" id="e-rate" hidden></p><p class="err" id="e-amount" hidden></p></div>
         ${T.person ? `<label class="field"><span class="lab">${T.person}</span><input class="input" id="f-person" maxlength="40" list="people-list" placeholder="Their name" value="${esc(d.person)}" autocomplete="off" aria-describedby="e-person"><datalist id="people-list">${people().map((p) => `<option value="${esc(p.name)}"></option>`).join("")}</datalist><span class="err" id="e-person" hidden></span></label>` : ""}
         <label class="field"><span class="lab">${d.type === "transfer" ? "Label" : "What for?"} <span class="opt-lab">(optional)</span></span><input class="input" id="f-title" maxlength="80" placeholder="${TYPE_EG[d.type]}" value="${esc(d.title)}" autocomplete="off"></label>
         ${T.cat ? categoryPicker(d.category, T.cat) : ""}
@@ -3179,7 +3204,11 @@ button.insight:hover { border-color: var(--line-strong); }
       },
       onSubmit() {
         read();
-        const T = TYPES[d.type], amount = parseAmount(d.amount), person = d.person.trim();
+        const T = TYPES[d.type], person = d.person.trim();
+        const orig = parseAmount(d.amount), rate = d.cur ? parseRate(d.rate) : 0;
+        const amount = d.cur ? round2(orig * rate) : orig;
+        showErr("e-rate", !d.cur || rate > 0 ? "" : `Enter the rate you got: how many ${state.settings.currency} one ${d.cur} cost.`);
+        if (d.cur && !(rate > 0)) return stop("f-rate");
         const toOk = d.type !== "transfer" || (d.to && d.to !== d.account);
         showErr("e-amount", amount > 0 ? "" : "Enter an amount above zero.");
         showErr("e-person", !T.person || person ? "" : "Add the person's name.");
@@ -3196,7 +3225,9 @@ button.insight:hover { border-color: var(--line-strong); }
         const data = {
           type: d.type, title: d.title.trim(), amount, category: T.cat ? d.category : "", date: d.date, account: d.account, to: d.type === "transfer" ? d.to : "",
           person: T.person ? person : "", note: d.note.trim(), method: d.type === "transfer" ? "" : METHODS[d.method] ? d.method : "other", due: hasDue && d.due ? d.due : "",
+          cur: d.cur || "", orig: d.cur ? orig : 0, rate: d.cur ? rate : 0,
         };
+        if (d.cur) state.settings.rates = { ...(state.settings.rates || {}), [d.cur]: rate };
         if (T.cat) ui.lastCat[T.cat] = d.category;
         ui.lastAccount = d.account;
         const m = monthOf(d.date), before = budgetStatus(m);
@@ -3206,7 +3237,7 @@ button.insight:hover { border-color: var(--line-strong); }
           if (e) Object.assign(e, data);
           commit(); msg = "Saved";
         } else {
-          state.entries.push({ id: uid(), ...data, recurringId: null, cur: "", orig: 0, rate: 0 });
+          state.entries.push({ id: uid(), ...data, recurringId: null });
           commit();
           msg = m === monthOf(todayISO()) ? `${entryTitle(data)} added` : `${entryTitle(data)} added to ${fMonth(m)}`;
         }
@@ -3228,6 +3259,16 @@ button.insight:hover { border-color: var(--line-strong); }
           }, 220);
         });
         card.addEventListener("keydown", (e) => { if (e.target.id === "f-quick" && e.key === "Enter") { e.preventDefault(); sheetAct?.("fill"); } });
+        const fx = () => { read(); const out = $("#fx-out"); if (out) out.textContent = fxText(d); };
+        card.addEventListener("input", (e) => { if (e.target.id === "f-amount" || e.target.id === "f-rate") fx(); });
+        card.addEventListener("change", (e) => {
+          if (e.target.id !== "f-cur") return;
+          read();
+          const row = $("#fx-row"); if (row) row.hidden = !d.cur;
+          $("#f-sym").textContent = symbolFor(d.cur || state.settings.currency);
+          if (d.cur) { $("#fx-code").textContent = d.cur; const known = state.settings.rates?.[d.cur]; if (known && !$("#f-rate").value) $("#f-rate").value = String(known); $("#f-rate").focus(); }
+          fx();
+        });
         card.addEventListener("change", (e) => {
           if (e.target.name === "category") { catTouched = true; const hint = $("#cat-hint"); if (hint) hint.hidden = true; }
           if (e.target.id === "f-method") methodTouched = true;
@@ -3487,8 +3528,9 @@ button.insight:hover { border-color: var(--line-strong); }
       body: `
         <section class="set-group" id="set-appearance">${appearanceHTML()}</section>
         <section class="set-group"><h3>Money</h3>
-          <label class="field"><span class="lab">Currency</span>${select("set-currency", CURRENCIES.map((c) => [c, `${c} · ${currencyName(c)}`]), s.currency)}</label>
+          <label class="field"><span class="lab">Currency</span>${select("set-currency", CURRENCIES.map((c) => [c, `${c} · ${currencyName(c)}`]), s.currency, ' aria-describedby="h-currency"')}<span class="hint" id="h-currency">Totals are in this currency. Changing it doesn't convert amounts you've already entered. For a one-off in another currency, pick it next to the amount when you add the entry.</span></label>
           <div class="set-line"><span>Budgets<small>${s.budget ? `${esc(W(s.budget))} a month` : "No monthly budget"}${nb ? ` · ${plural(nb, "category budget")}` : ""}</small></span><button type="button" class="btn small" data-act="budgets">Edit budgets</button></div></section>
+        <section class="set-group" id="set-remind-group">${remindHTML()}</section>
         <section class="set-group"><h3>Categories</h3>
           <p class="lab">Spending</p><div class="cat-list" id="set-cats-expense"></div>
           <p class="lab">Income</p><div class="cat-list" id="set-cats-income"></div>
@@ -3518,6 +3560,7 @@ button.insight:hover { border-color: var(--line-strong); }
         $("#set-currency", card).addEventListener("change", (e) => { state.settings.currency = e.target.value; commit(); });
         $("#set-newcat", card).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addCategory(); } });
         $("#set-restore", card).addEventListener("change", (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) readBackup(f); });
+        card.addEventListener("change", (e) => { if (e.target.id === "set-remind") enableReminders(e.target.checked); });
       },
     });
   }
@@ -3909,7 +3952,8 @@ button.insight:hover { border-color: var(--line-strong); }
       const noteBits = [spentFile ? spentCol(r, "note") : col(r, "note"), !spentFile && title !== String(raw).trim() ? String(raw).trim() : ""].filter(Boolean);
       const e = {
         id: uid(), type, title: title === "Imported entry" ? "" : title, amount, category, date, account: acct.id, to, person, note: noteBits.join(" · ").slice(0, 140),
-        recurringId: null, method, due: spentFile && isDate(spentCol(r, "pay back by")) ? spentCol(r, "pay back by") : "", cur: "", orig: 0, rate: 0,
+        recurringId: null, method, due: spentFile && isDate(spentCol(r, "pay back by")) ? spentCol(r, "pay back by") : "",
+        ...(spentFile ? foreign({ cur: spentCol(r, "original currency"), orig: parseMoneyCell(spentCol(r, "original amount")), rate: parseRate(spentCol(r, "rate")) }, state.settings.currency) : { cur: "", orig: 0, rate: 0 }),
       };
       const key = `${e.date}|${e.amount}|${e.account}|${isIn(e) ? "in" : "out"}`;
       if (opts.skipDupes && existing.get(key) > 0) { existing.set(key, existing.get(key) - 1); out.push({ status: "dupe", e }); continue; }
@@ -4144,6 +4188,108 @@ button.insight:hover { border-color: var(--line-strong); }
     catch (e) { toast(e && /network|timeout|missing/.test(e.message) ? `The ${kind === "pdf" ? "PDF" : "Excel"} tool couldn't load. Check your connection and try again.` : "That report couldn't be made. Try again, or export a CSV instead."); }
   }
 
+  /* ================= reminders and installing the app ================= */
+  /* Reminders use the browser's notifications, so they only work on Spent's own site or the installed app, not inside
+     another page. There's no server: a reminder shows when Spent is open, and on phones that support it the installed
+     app also checks once or twice a day while closed. */
+  const inFrame = (() => { try { return window.top !== window.self; } catch { return true; } })();
+  const canNotify = () => typeof Notification !== "undefined" && window.isSecureContext && !window.claude && !inFrame;
+  const canWorker = () => "serviceWorker" in navigator && window.isSecureContext && !window.claude && !inFrame;
+  const DATA_CACHE = "spent-data";
+
+  /* Bills and repayments due within a week, overdue ones included. */
+  function reminderItems() {
+    const t = todayISO(), until = addDays(t, 7), items = [];
+    for (const { r, st } of upcoming()) {
+      if (r.kind === "income" || st.due > until) continue;
+      const when = st.overdue ? `was due ${fDate(st.due)}` : st.days === 0 ? "is due today" : st.days === 1 ? "is due tomorrow" : `is due ${fDate(st.due)}`;
+      items.push({ key: `${r.id}:${st.key}`, due: st.due, title: `${r.name} ${when}`, body: `${r.variable ? "About " : ""}${money(r.amount)}${r.kind === "transfer" ? ` to ${acctName(r.to)}` : ""}. Open Spent to mark it ${RKIND[r.kind].done}.`, url: "./#recurring" });
+    }
+    for (const p of people()) {
+      const st = debtStatus(p);
+      if (!st || p.due > until) continue;
+      const owed = p.balance > 0;
+      items.push({ key: `debt:${p.key}:${p.due}`, due: p.due, title: owed ? `${p.name} owes you ${money(p.balance)}` : `You owe ${p.name} ${money(-p.balance)}`, body: `${st.overdue ? "It was due" : "It's due"} ${fDate(p.due)}.`, url: "./#wallet" });
+    }
+    return items.sort((a, b) => a.due.localeCompare(b.due));
+  }
+  async function readSent() { try { const c = await caches.open(DATA_CACHE), r = await c.match("sent.json"); return r ? await r.json() : {}; } catch { return {}; } }
+  async function writeSent(sent) { try { const c = await caches.open(DATA_CACHE); await c.put("sent.json", new Response(JSON.stringify(sent))); } catch { /* reminders still work, they may repeat */ } }
+  /* The service worker can't read the app's storage, so the list of what's due is copied where it can. */
+  async function syncReminders() {
+    if (!canWorker() || typeof caches === "undefined") return;
+    try { const c = await caches.open(DATA_CACHE); await c.put("reminders.json", new Response(JSON.stringify({ enabled: !!state.settings.remind && !state.sample, items: reminderItems() }))); } catch { /* not supported here */ }
+  }
+  /* Shows each due item at most once a day: on the day before, on the day, and on days it's overdue. */
+  async function checkReminders() {
+    if (!state.settings.remind || state.sample || !canNotify() || Notification.permission !== "granted") return;
+    const t = todayISO(), tomorrow = addDays(t, 1), sent = await readSent();
+    const due = reminderItems().filter((x) => x.due <= tomorrow && sent[x.key] !== t);
+    if (!due.length) return;
+    const reg = canWorker() ? await navigator.serviceWorker.getRegistration() : null;
+    for (const x of due.slice(0, 4)) {
+      const o = { body: x.body, tag: x.key, icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: x.url } };
+      try { if (reg) await reg.showNotification(x.title, o); else new Notification(x.title, o); sent[x.key] = t; } catch { /* the browser refused this one */ }
+    }
+    await writeSent(sent);
+  }
+  async function enableReminders(on) {
+    if (!on) { state.settings.remind = false; commit(); syncReminders(); toast("Reminders turned off"); return; }
+    if (!canNotify()) { toast("Reminders work on Spent's own website or the installed app."); return; }
+    let perm = Notification.permission;
+    if (perm === "default") { try { perm = await Notification.requestPermission(); } catch { perm = "denied"; } }
+    if (perm !== "granted") { toast("Notifications are blocked for Spent. Allow them in your browser's site settings, then try again."); renderRemindSection(); return; }
+    state.settings.remind = true;
+    commit();
+    try {
+      const reg = await navigator.serviceWorker?.ready;
+      if (reg && "periodicSync" in reg) {
+        const st = await navigator.permissions.query({ name: "periodic-background-sync" }).catch(() => null);
+        if (!st || st.state === "granted") await reg.periodicSync.register("spent-reminders", { minInterval: 12 * 3600 * 1000 }).catch(() => {});
+      }
+    } catch { /* checking while closed isn't available here */ }
+    await syncReminders();
+    toast(state.sample ? "Reminders are on. They start once you track your own money." : "Reminders are on");
+    checkReminders();
+    renderRemindSection();
+  }
+
+  /* ---------- installing ---------- */
+  let installPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; renderRemindSection(); });
+  window.addEventListener("appinstalled", () => { installPrompt = null; toast("Spent is installed"); renderRemindSection(); });
+  const standalone = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch { return false; } };
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  async function installApp() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    try { await installPrompt.userChoice; } catch { /* dismissed */ }
+    installPrompt = null;
+    renderRemindSection();
+  }
+
+  /* The Settings section for both */
+  function remindHTML() {
+    const notify = canNotify(), perm = notify ? Notification.permission : "unavailable", on = !!state.settings.remind && perm === "granted";
+    let install = "";
+    if (canWorker() && !standalone()) {
+      if (installPrompt) install = `<div class="set-line"><span>Install Spent<small>Opens like an app and works without internet.</small></span><button type="button" class="btn small" data-act="install">${svg("download")}Install</button></div>`;
+      else if (isIOS()) install = `<p class="hint">To install on iPhone or iPad, open this page in Safari, tap Share, then Add to Home Screen.</p>`;
+      else install = `<p class="hint">Spent works offline once it has loaded. To install it, use your browser's Install or Add to Home Screen option.</p>`;
+    } else if (standalone()) install = `<p class="hint">Spent is installed on this device and works without internet.</p>`;
+    const remind = notify
+      ? `<label class="check"><input type="checkbox" id="set-remind"${on ? " checked" : ""}><span>Remind me about bills and money that's due<small>${perm === "denied" ? "Notifications are blocked for this site. Allow them in your browser's site settings first." : "A notification the day before, on the day and while overdue. Reminders show when Spent is open; on some phones the installed app also checks while it's closed."}</small></span></label>`
+      : `<p class="hint">Notifications work on Spent's own website or the installed app, not inside this page. Bills that are due always show at the top of Home.</p>`;
+    return `<h3>Reminders${canWorker() ? " and offline" : ""}</h3>${remind}${install}`;
+  }
+  function renderRemindSection() { const el = $("#set-remind-group"); if (el) el.innerHTML = remindHTML(); }
+
+  if (canWorker()) {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* offline mode isn't available here */ });
+    navigator.serviceWorker.addEventListener?.("message", (e) => { if (e.data?.type === "open" && e.data.url) location.hash = e.data.url.split("#")[1] || "home"; });
+  }
+  setInterval(() => { if (!document.hidden) checkReminders(); }, 30 * 60 * 1000);
+
   /* ================= routing and events ================= */
   function route() {
     let h = location.hash.slice(1);
@@ -4163,7 +4309,7 @@ button.insight:hover { border-color: var(--line-strong); }
   window.addEventListener("scroll", () => { onScroll(); hideTip(); if (menuEl) closeMenu(); }, { passive: true });
   window.addEventListener("hashchange", route);
   window.addEventListener("resize", () => { $$(".row-track").forEach((tr) => tr._upd?.()); hideTip(); closeMenu(); });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && $("#sheet").hidden) { render(); runAuto(); } });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && $("#sheet").hidden) { render(); runAuto(); checkReminders(); } });
   const setTopH = () => rootEl.style.setProperty("--top-h", topbar.offsetHeight + "px");
   try { new ResizeObserver(setTopH).observe(topbar); } catch { window.addEventListener("resize", setTopH); }
   setTopH();
@@ -4230,6 +4376,7 @@ button.insight:hover { border-color: var(--line-strong); }
       }
       case "lend": entryForm(null, { type: "lent" }); break;
       case "import": importSheet(); break;
+      case "install": installApp(); break;
       case "export-menu": {
         const what = periodLabel(ui.insPeriod, ui.anchor);
         openMenu(el, [
@@ -4329,5 +4476,6 @@ button.insight:hover { border-color: var(--line-strong); }
   setSync("local");
   runAuto();
   initCloud();
+  syncReminders().then(checkReminders);
 })();
 </script>

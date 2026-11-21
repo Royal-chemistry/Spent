@@ -139,5 +139,15 @@
     }
     return { available: round2(available), cardOwed: round2(cardOwed), saved: round2(saved) };
   }
+  /* ---------- other currencies ---------- */
+  function symbolFor(cur) { try { return nf(cur, 0).formatToParts(0).find((p) => p.type === "currency")?.value || cur; } catch { return cur; } }
+  /* Rates can need more than two decimals (1 JPY = 0.5512 INR). A comma works as the decimal mark too. */
+  function parseRate(v) { const s = String(v ?? "").trim().replace(/\s/g, "").replace(/,(?=\d+$)/, ".").replace(/,/g, ""); const n = Number(s); return Number.isFinite(n) && n > 0 && n < 1e7 ? Number(n.toPrecision(8)) : 0; }
+  function fxText(d) {
+    if (!d.cur) return "";
+    const orig = parseAmount(d.amount), rate = parseRate(d.rate);
+    if (!(orig > 0) || !(rate > 0)) return "Type the rate to see the amount in " + state.settings.currency + ".";
+    return `= ${money(round2(orig * rate))}, which is what counts in your totals`;
+  }
   const METHOD_COLORS = { upi: "#0E7490", debit: "#1D4ED8", credit: "#3F3F46", cash: "#15803D", bank: "#4338CA", wallet: "#7C3AED", other: "#52525B" };
 

@@ -17,7 +17,7 @@
   window.addEventListener("scroll", () => { onScroll(); hideTip(); if (menuEl) closeMenu(); }, { passive: true });
   window.addEventListener("hashchange", route);
   window.addEventListener("resize", () => { $$(".row-track").forEach((tr) => tr._upd?.()); hideTip(); closeMenu(); });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && $("#sheet").hidden) { render(); runAuto(); } });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && $("#sheet").hidden) { render(); runAuto(); checkReminders(); } });
   const setTopH = () => rootEl.style.setProperty("--top-h", topbar.offsetHeight + "px");
   try { new ResizeObserver(setTopH).observe(topbar); } catch { window.addEventListener("resize", setTopH); }
   setTopH();
@@ -84,6 +84,7 @@
       }
       case "lend": entryForm(null, { type: "lent" }); break;
       case "import": importSheet(); break;
+      case "install": installApp(); break;
       case "export-menu": {
         const what = periodLabel(ui.insPeriod, ui.anchor);
         openMenu(el, [
@@ -183,3 +184,4 @@
   setSync("local");
   runAuto();
   initCloud();
+  syncReminders().then(checkReminders);

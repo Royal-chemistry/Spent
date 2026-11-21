@@ -115,6 +115,8 @@
     out.settings.carry = !!set.carry;
     out.settings.alerts = set.alerts !== false;
     out.settings.remind = !!set.remind;
+    out.settings.rates = {};
+    if (set.rates && typeof set.rates === "object") for (const [c, r] of Object.entries(set.rates)) if (CURRENCIES.includes(c) && Number(r) > 0 && Number(r) < 1e7) out.settings.rates[c] = Number(r);
     const hex = (c) => /^#[0-9a-f]{6}$/i.test(c);
 
     if (Array.isArray(s.categories) && s.categories.length) {
@@ -296,7 +298,7 @@
     if (T.person) bits.push(e.title ? `${T.label}, ${e.person}` : T.label);
     if (e.type === "transfer") bits.push(e.title ? `${acctName(e.account)} to ${acctName(e.to)}` : "Transfer");
     else { if (methodShown(e)) bits.push(METHODS[e.method]); bits.push(acctName(e.account)); }
-    if (e.cur) bits.push(`${fmtCur(e.orig, e.cur)} at ${e.rate}`);
+    if (e.cur) bits.push(`Paid in ${e.cur} at ${e.rate}`);
     if (e.recurringId && state.recurring.some((r) => r.id === e.recurringId)) bits.push("Recurring");
     if (e.note) bits.push(e.note);
     return bits.map(esc).join(" · ");

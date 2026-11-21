@@ -226,7 +226,8 @@
       const noteBits = [spentFile ? spentCol(r, "note") : col(r, "note"), !spentFile && title !== String(raw).trim() ? String(raw).trim() : ""].filter(Boolean);
       const e = {
         id: uid(), type, title: title === "Imported entry" ? "" : title, amount, category, date, account: acct.id, to, person, note: noteBits.join(" · ").slice(0, 140),
-        recurringId: null, method, due: spentFile && isDate(spentCol(r, "pay back by")) ? spentCol(r, "pay back by") : "", cur: "", orig: 0, rate: 0,
+        recurringId: null, method, due: spentFile && isDate(spentCol(r, "pay back by")) ? spentCol(r, "pay back by") : "",
+        ...(spentFile ? foreign({ cur: spentCol(r, "original currency"), orig: parseMoneyCell(spentCol(r, "original amount")), rate: parseRate(spentCol(r, "rate")) }, state.settings.currency) : { cur: "", orig: 0, rate: 0 }),
       };
       const key = `${e.date}|${e.amount}|${e.account}|${isIn(e) ? "in" : "out"}`;
       if (opts.skipDupes && existing.get(key) > 0) { existing.set(key, existing.get(key) - 1); out.push({ status: "dupe", e }); continue; }

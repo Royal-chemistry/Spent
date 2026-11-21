@@ -21,6 +21,7 @@
     render();
     queueSync();
     setSync(cloud.col ? cloud.status : "local");
+    syncReminders();
   }
   function withUndo(mutate, msg) {
     const snap = JSON.stringify(state);
